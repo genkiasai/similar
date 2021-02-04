@@ -1,5 +1,5 @@
 <?php
-    session_start();
+    // session_start();
 
     // N-gramの取得
     function get_ngram($str, $n, &$substr) {

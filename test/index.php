@@ -61,6 +61,8 @@
     // 3.作成した.txtファイルを削除
     // 4.
     // 5.
+
+    // 指定されたフォルダの.pdfファイルのパスを[dirname][tmp_name]で抽出
     $pdf_cnt = 0;
     $pdf_name[] = "";
     $pdf_tmp_name[] = "";
@@ -73,82 +75,90 @@
             }
         }
 
-        for ($i = 0; $i < count($pdf_tmp_name); $i++) {
-            move_uploaded_file($pdf_tmp_name[$i], "./pdftotext_escape/" . $pdf_name[$i]);
-            $cmd = __DIR__ . "/xpdf-tools-win-4.03/bin64/pdftotext -enc Shift-JIS " . __DIR__ . "/pdftotext_escape/" . $pdf_name[$i];
-            exec ($cmd);
-        }
-
-        // index.php(このファイル)と同階層にxpdf-tools-win-4.03を置く
-        // $cmd = __DIR__ . "xpdf-tools-win-4.03\\bin64\\pdftotext -enc Shift-JIS C:\\xampp\\htdocs\\similar\\pdf\\テストです.pdf";
-        // $cmd = __DIR__ . "./xpdf-tools-win-4.03/bin64/pdftotext -enc Shift-JIS C:/xampp/htdocs/similar/pdf/テストです.pdf";
-        $cmd = __DIR__ . "./xpdf-tools-win-4.03/bin64/pdftotext -enc Shift-JIS" . $txt_contents;
-        exec ($cmd);
-
-
-
-
-
-        for ($i = 0; $i < $txt_cnt; $i++) {
-            // $contents = "";
-            $file_path = $txt_contents[$i];
-            $zip = new \ZipArchive();
-    
-            if ($zip->open($file_path) === true) {
-                $xml = $zip->getFromName("word/document.xml");
-                if ($xml) {
-                    $dom = new \DOMDocument();
-                    $dom->loadXML($xml);
-                    $paragraphs = $dom->getElementsByTagName("p");
-                    foreach ($paragraphs as $p) {
-                        $texts = $p->getElementsByTagName("t");
-                        foreach ($texts as $t) {
-                            $contents[$i] .= $t->nodeValue;
-                        }
-                    }
-                    $contents[$i] = preg_replace("#[ \n\t\r　]+#um", "", $contents[$i]);
+        if ($pdf_cnt > 0) {
+            for ($i = 0; $i < count($pdf_tmp_name); $i++) {
+                // 0.特定のフォルダ(./pdftotext_escape)に.pdfファイルを[dirname][tmp_name]でコピーさせる
+                move_uploaded_file($pdf_tmp_name[$i], "./pdftotext_escape/" . $pdf_name[$i]);
+                // 1.「pdftotextのパス -enc Shift-JIS ./pdftotext_escape/.pdfのファイル名」でコマンドをたたいて.txtファイルを作成
+                // index.php(このファイル)と同階層にxpdf-tools-win-4.03を置く
+                // Macはスラッシュ？
+                // $cmd = __DIR__ . "/xpdf-tools-win-4.03/bin64/pdftotext -enc Shift-JIS " . __DIR__ . "/pdftotext_escape/" . $pdf_name[$i];
+                // Windowsは￥マーク？
+                $cmd = __DIR__ . "\\xpdf-tools-win-4.03\\bin64\\pdftotext -enc Shift-JIS " . __DIR__ . "\\pdftotext_escape\\" . $pdf_name[$i];
+                exec ($cmd, $dummy, $result);
+                if ($result === 0) {
+                    $txt_name = explode(".", $pdf_name[$i])[0] . ".txt";
+                    $txt_path = __DIR__ . "\\pdftotext_escape\\" . $txt_name;
+                    // 文字化け
+                    $file_get_contents = file_get_contents($txt_path);
+                    $str = mb_convert_encoding($file_get_contents,"utf-8","sjis"); // シフトJISからUTF-8に変換
+                    $contents[$i] = $str;
                 }
             }
         }
+
+
+
+        // for ($i = 0; $i < $txt_cnt; $i++) {
+        //     // $contents = "";
+        //     $file_path = $txt_contents[$i];
+        //     $zip = new \ZipArchive();
+    
+        //     if ($zip->open($file_path) === true) {
+        //         $xml = $zip->getFromName("word/document.xml");
+        //         if ($xml) {
+        //             $dom = new \DOMDocument();
+        //             $dom->loadXML($xml);
+        //             $paragraphs = $dom->getElementsByTagName("p");
+        //             foreach ($paragraphs as $p) {
+        //                 $texts = $p->getElementsByTagName("t");
+        //                 foreach ($texts as $t) {
+        //                     $contents[$i] .= $t->nodeValue;
+        //                 }
+        //             }
+        //             $contents[$i] = preg_replace("#[ \n\t\r　]+#um", "", $contents[$i]);
+        //         }
+        //     }
+        // }
     }
 
     ///////////////////////
     // Zipファイル読み込み //
     //////////////////////
-    $zip_cnt = 0;
-    $zip_contents[] = "";
-    if (isset($_FILES["dirname"]["name"])) {
-        for ($i = 0; $i < count($_FILES["dirname"]["name"]); $i++) {
-            if (substr($_FILES["dirname"]["name"][$i], -3, 3) === "zip") {
-                $zip_contents[$zip_cnt] = $_FILES["dirname"]["tmp_name"][$i];
-                $zip_cnt++;
-            }
-        }
-        for ($i = 0; $i < $zip_cnt; $i++) {
-            $file_path = $zip_contents[$i];
-            $zip = new \ZipArchive();
+    // $zip_cnt = 0;
+    // $zip_contents[] = "";
+    // if (isset($_FILES["dirname"]["name"])) {
+    //     for ($i = 0; $i < count($_FILES["dirname"]["name"]); $i++) {
+    //         if (substr($_FILES["dirname"]["name"][$i], -3, 3) === "zip") {
+    //             $zip_contents[$zip_cnt] = $_FILES["dirname"]["tmp_name"][$i];
+    //             $zip_cnt++;
+    //         }
+    //     }
+    //     for ($i = 0; $i < $zip_cnt; $i++) {
+    //         $file_path = $zip_contents[$i];
+    //         $zip = new \ZipArchive();
             
-            if ($zip->open($file_path) === true) {    
-            // $docx = $zip->open($file_path);
-            // if ($docx) {
-            //     $zip->open($docx);
-                $zip->open($file_path);
-                $xml = $zip->getFromName("word/document.xml");
-                if ($xml) {
-                    $dom = new \DOMDocument();
-                    $dom->loadXML($xml);
-                    $paragraphs = $dom->getElementsByTagName("p");
-                    foreach ($paragraphs as $p) {
-                        $texts = $p->getElementsByTagName("t");
-                        foreach ($texts as $t) {
-                            $contents[$i] .= $t->nodeValue;
-                        }
-                    }
-                    $contents[$i] = preg_replace("#[ \n\t\r　]+#um", "", $contents[$i]);
-                }
-            }
-        }
-    }
+    //         if ($zip->open($file_path) === true) {    
+    //         // $docx = $zip->open($file_path);
+    //         // if ($docx) {
+    //         //     $zip->open($docx);
+    //             $zip->open($file_path);
+    //             $xml = $zip->getFromName("word/document.xml");
+    //             if ($xml) {
+    //                 $dom = new \DOMDocument();
+    //                 $dom->loadXML($xml);
+    //                 $paragraphs = $dom->getElementsByTagName("p");
+    //                 foreach ($paragraphs as $p) {
+    //                     $texts = $p->getElementsByTagName("t");
+    //                     foreach ($texts as $t) {
+    //                         $contents[$i] .= $t->nodeValue;
+    //                     }
+    //                 }
+    //                 $contents[$i] = preg_replace("#[ \n\t\r　]+#um", "", $contents[$i]);
+    //             }
+    //         }
+    //     }
+    // }
     
 
 
@@ -222,6 +232,28 @@
             left: 1px;
             color: #000;
         }
+
+        .button {
+            border-radius: 5px 5px;
+        }
+
+
+        .content_box {
+            background-color: #dfd;
+            padding: 10px 40px 40px 40px;
+            margin-bottom: 40px;
+            border-radius: 16px 16px;
+        }
+
+        .example {
+            border: 1px solid #000;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .error {
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -272,18 +304,66 @@
                 <p>類似度：<?php if (isset($perc_sub)) {echo $perc_sub . "%";} ?></p>
             </div>
 
-            <p>フォルダ読み込み</p>
+            <!-- <p>フォルダ読み込み</p>
             <div class="row input_text">
                 <input type="file" class="dirname" id="dirname" name="dirname[]" webkitdirectory directory value="フォルダ読み込み">
                 <label for="dirname">フォルダ選択</label>
                 <input type="submit" class="col-12 col-sm-12 col-md-12" id="read_dir" name="read_dir" value="読み込み">
-                <?php　var_dump($_FILES["dirname"]["name"]); ?>
-                <?php for ($i = 0; $i < count($contents); $i++): ?>
+                <?php　// var_dump($_FILES["dirname"]["name"]); ?>
+                <?php // for ($i = 0; $i < count($contents); $i++): ?>
                     <textarea name="read_text" id="read_text<?php echo $i; ?>" cols="30" rows="10"><?php echo $contents[$i]; ?></textarea>
-                <?php endfor; ?>
+                <?php //endfor; ?> -->
 
             </div>
 
+
+            <div class="content_box">
+                <p>【フォルダ読み込み】</p>
+                <p class="discription">
+                    「フォルダ選択」ボタンで比較したい.docxファイルが入っているフォルダを選択し、読み込みボタンを押下することで、指定したフォルダ内の.docxファイルに書かれている文字列を取得し、類似度を計算します。<br>
+                    現状、N-gramでの類似度チェックとなっているため、N-gramの数値の指定もお願いします。
+                </p>
+                <div class="row input_text">
+                    <input type="file" class="dirname" id="dirname" name="dirname[]" webkitdirectory directory value="フォルダ読み込み"><br>
+                    <label class="button" for="dirname">フォルダ選択</label><br>
+                    <div class="w-100"></div>
+                    <p class="mr-5">N-gram:<input type="number" class="ngram" id="ngram" name="ngram" min="2" max="10" step="1" value="<?php echo $_POST["ngram"]; ?>"></p>
+                    <p class="p-0">類似度閾値：<input type="number" class="threshold" id="threshold" name="threshold" min="1" max="100" step="1" value="<?php echo $_POST["threshold"]; ?>"></p>
+                    <div class="w-100"></div>
+                    <p>※文字列に含まれる「改行」「空白」「タブ」は削除して計算しています。</p>
+                    <?php if ($text_min_len < $_POST["ngram"] || $_POST["ngram"] < 2) : ?>
+                        <p class="error col-12 col-sm-12 col-md-12 p-0">N-gramは2以上かつ文字列の文字数以下で指定してください</p>
+                    <?php elseif (empty($_FILES["dirname"]["name"][0]) && isset($_POST["read_dir"])) : ?>
+                        <p class="error col-12 col-sm-12 col-md-12 p-0">読み込むフォルダを指定してください</p>
+                    <?php endif; ?>
+                    <input type="submit" class="col-12 col-sm-12 col-md-12" id="read_dir" name="read_dir" value="読み込み">
+                    <?php // var_dump($_FILES["dirname"]["name"]); ?>
+                    <?php for ($i = 0; $i < count($contents); $i++): ?>
+                        <p>ファイル<?php echo $i + 1; ?>：<?php echo $content_name[$i]; ?></p>
+                        <textarea name="read_text" id="read_text<?php echo $i; ?>" cols="30" rows="10"><?php echo $contents[$i]; ?></textarea>
+                    <?php endfor; ?>
+                </div>
+
+                <?php
+                    // 計算した類似度の表示
+                    $contents_cnt = count($contents);
+                    if ($contents_cnt >=  2) {
+                        for ($i = 0; $i < $contents_cnt - 1; $i++) {
+                            for ($j = $i + 1; $j < $contents_cnt; $j++) {
+                                get_ngram ($contents[$i], $_POST["ngram"], $substr1);
+                                get_ngram ($contents[$j], $_POST["ngram"], $substr2);
+                                similar_check ($substr1, $substr2, $perc);
+                                if ($perc > $_POST["threshold"]) {
+                                    echo "<p style='color: red;'>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
+                                } else {
+                                    echo "<p>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
+                                }
+
+                            }
+                        }
+                    }
+                ?>
+            </div>
 
 
 
