@@ -1,6 +1,7 @@
 <?php
     session_start();
     require ("./common.php");
+    require ("./zipName.php");
     ini_set ("display_errors", 0);
 
     if (!isset($_POST["ngram_"])) {
@@ -15,6 +16,10 @@
 
     // エラーメッセージ閾値
     $text_min_len = 999999999;
+
+    // ZipArchiveクラスコンストラクタ
+    $zip = new ZipArchive;
+
 
     //////////////
     // 比較処理1 //
@@ -68,100 +73,55 @@
     // フォルダ読み込み //
     /////////////////////
     // 指定されたフォルダの.pdfファイルのパスを[dirname][tmp_name]で抽出
-    // 抽出したファイルを1つずつ見ていく
-    // for $i = 0; $i < count($txt_contents); $i++
-    // 0.特定のフォルダ(./pdftotext_escape)に.pdfファイルを[dirname][tmp_name]でコピーさせる
-    // 1.「pdftotextのパス -enc Shift-JIS ./pdftotext_escape/.pdfのファイル名」でコマンドをたたいて.txtファイルを作成
-    // 2.作成した.txtファイルのテキストを配列($contents)に格納
-    // 3.作成した.txtファイルを削除
-    // 4.
-    // 5.
-
-    // 指定されたフォルダの.pdfファイルのパスを[dirname][tmp_name]で抽出
     $pdf_cnt = 0;
     $pdf_name[] = "";
     $pdf_tmp_name[] = "";
     if (isset($_FILES["dirname"]["tmp_name"])) {
+        ////////////////////////
+        // Zipファイル読み込み //
+        ////////////////////////
+        // 指定されたフォルダの.zipファイルのパスを[dirname][tmp_name]で抽出
+        $zip_cnt = 0;
+        $zip_name[] = "";
+        $zip_tmp_name[] = "";
         for ($i = 0; $i < count($_FILES["dirname"]["tmp_name"]); $i++) {
-            if (substr($_FILES["dirname"]["name"][$i], -4, 4) === ".pdf") {
-                $pdf_name[$pdf_cnt] = $_FILES["dirname"]["name"][$i];
-                $pdf_tmp_name[$pdf_cnt] = $_FILES["dirname"]["tmp_name"][$i];
-                $pdf_cnt++;
-            }
-        }
-
-        if ($pdf_cnt > 0) {
-            for ($i = 0; $i < count($pdf_tmp_name); $i++) {
-                // 0.特定のフォルダ(./pdftotext_escape)に.pdfファイルを[dirname][tmp_name]でコピーさせる
-                $pdf_name_replace = preg_replace("#[ ]#", "" ,$pdf_name[$i]);
-                move_uploaded_file($pdf_tmp_name[$i], "./pdftotext_escape/" . $pdf_name_replace);
-                // 1.「pdftotextのパス -enc Shift-JIS ./pdftotext_escape/.pdfのファイル名」でコマンドをたたいて.txtファイルを作成
-                // index.php(このファイル)と同階層にxpdf-tools-win-4.03を置く
-                // Macはスラッシュ？
-                // $cmd = __DIR__ . "/xpdf-tools-win-4.03/bin64/pdftotext -enc Shift-JIS " . __DIR__ . "/pdftotext_escape/" . $pdf_name_replace;
-                // Windowsは￥マーク？
-                $cmd = __DIR__ . "\\xpdf-tools-win-4.03\\bin64\\pdftotext -enc Shift-JIS " . __DIR__ . "\\pdftotext_escape\\" . $pdf_name_replace;
-                exec ($cmd, $dummy, $result);
-                if ($result === 0) {
-                    $txt_name = explode(".", $pdf_name_replace)[0] . ".txt";
-                    $txt_path = __DIR__ . "\\pdftotext_escape\\" . $txt_name;
-                    // 文字化け
-                    $file_get_contents = file_get_contents($txt_path);
-                    $str = mb_convert_encoding($file_get_contents,"utf-8","sjis"); // シフトJISからUTF-8に変換
-                    $contents[$i] = $str;
-                    unlink("./pdftotext_escape/" . $pdf_name_replace);
-                    unlink($txt_path);
+            if (substr($_FILES["dirname"]["name"][$i], -4, 4) === ".zip") {
+                $zip_name = preg_replace("#[　 ]#u", "", $_FILES["dirname"]["name"][$i]);
+                $zip_tmp_name = $_FILES["dirname"]["tmp_name"][$i];
+                move_uploaded_file($zip_tmp_name, "./pdftotext_escape/" . $zip_name);
+                if ($zip->open("./pdftotext_escape/" . $zip_name) === true) {
+                    $zip->extractTo("./pdftotext_escape/");
+                    $zip->close();
+                }
+                $pdf_files = glob("./pdftotext_escape/*.pdf");
+                for ($j = 0; $j < count($pdf_files); $j++) {
+                    $file_name = preg_replace("#[ 　]#u", "", explode(".", $zip_name)[0]);
+                    rename($pdf_files[$j], "./pdftotext_escape/pdf/" . $file_name . ".pdf");
                 }
             }
         }
-
-    ///////////////////////
-    // Zipファイル読み込み //
-    //////////////////////
-    // $zip_cnt = 0;
-    // $zip_contents[] = "";
-    // $text_min_len = 99999999;
-    // if (isset($_FILES["dirname"]["name"])) {
-    //     for ($i = 0; $i < count($_FILES["dirname"]["name"]); $i++) {
-    //         if (substr($_FILES["dirname"]["name"][$i], -3, 3) === "zip") {
-    //             $zip_contents[$zip_cnt] = $_FILES["dirname"]["tmp_name"][$i];
-    //             $zip_cnt++;
-    //         }
-    //     }
-    //     for ($i = 0; $i < $zip_cnt; $i++) {
-    //         $file_path = $zip_contents[$i];
-    //         $zip = new \ZipArchive();
-            
-    //         if ($zip->open($file_path) === true) {    
-    //         // $docx = $zip->open($file_path);
-    //         // if ($docx) {
-    //         //     $zip->open($docx);
-    //             $zip->open($file_path);
-    //             $xml = $zip->getFromName("word/document.xml");
-    //             if ($xml) {
-    //                 $dom = new \DOMDocument();
-    //                 $dom->loadXML($xml);
-    //                 $paragraphs = $dom->getElementsByTagName("p");
-    //                 foreach ($paragraphs as $p) {
-    //                     $texts = $p->getElementsByTagName("t");
-    //                     foreach ($texts as $t) {
-    //                         $contents[$i] .= $t->nodeValue;
-    //                     }
-    //                 }
-    //                 $contents[$i] = preg_replace("#[ \n\t\r　]+#um", "", $contents[$i]);
-    //             }
-    //         }
-    //     }
-        // 読み込んだファイルに書かれた文字数で一番少ない数字を取得
-        for ($i = 0; $i < count ($contents); $i++) {
-            $text_len = mb_strlen ($contents[$i]);
-            if ($text_len < $text_min_len) {
-                $text_min_len = $text_len;
+        $pdf_files = [];
+        $pdf_files = glob("./pdftotext_escape/pdf/*.pdf");
+        for ($i = 0; $i < count($pdf_files); $i++) {
+            $pdf_path_name = basename($pdf_files[$i]);
+            $pdf_file_name[$i] = $pdf_path_name; 
+            $pdf_replace_name = preg_replace("#[ 　]#u", "", $pdf_path_name);
+            $cmd2 = __DIR__ . "\\xpdf-tools-win-4.03\\bin64\\pdftotext -enc Shift-JIS " . __DIR__ . "\\pdftotext_escape/pdf/" . $pdf_replace_name;
+            exec ($cmd2, $dummy, $result2);
+            if ($result2 === 0) {
+                // $txt_name = explode(".", $pdf_path_name)[0] . ".txt";
+                $txt_name = explode(".", $pdf_replace_name)[0] . ".txt";
+                $txt_path = __DIR__ . "\\pdftotext_escape\\pdf\\" . $txt_name;
+                // 文字化け
+                $file_get_contents = file_get_contents($txt_path);
+                $str = mb_convert_encoding($file_get_contents,"utf-8","sjis"); // シフトJISからUTF-8に変換
+                $contents[$i] = $str;
             }
         }
-        // if (empty($_FILES["dirname"]["name"][0])) {
-        //     $text_min_len = 0;
-        // }
+        array_map("unlink", glob("./pdftotext_escape/pdf/*.pdf"));
+        array_map("unlink", glob("./pdftotext_escape/pdf/*.txt"));
+        array_map("unlink", glob("./pdftotext_escape/*.zip"));
+        array_map("unlink", glob("./pdftotext_escape/*.txt"));
     }
     
 
@@ -396,7 +356,8 @@
                 <input type="submit" class="col-12 col-sm-12 col-md-12" id="read_dir" name="read_dir" value="読み込み">
                 <?php // var_dump($_FILES["dirname"]["name"]); ?>
                 <?php for ($i = 0; $i < count($contents); $i++): ?>
-                    <p>ファイル<?php echo $i + 1; ?>：<?php echo $pdf_name[$i]; ?></p>
+                    <!-- @TODO ファイル名 -->
+                    <p>ファイル<?php echo $i + 1; ?>：<?php echo $pdf_file_name[$i]; ?></p>
                     <textarea name="read_text" id="read_text<?php echo $i; ?>" cols="30" rows="10"><?php echo $contents[$i]; ?></textarea>
                 <?php endfor; ?>
             </div>
