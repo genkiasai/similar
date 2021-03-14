@@ -1,7 +1,7 @@
 <?php
     session_start();
     require ("./common.php");
-    require ("./zipName.php");
+    // require ("./zipName.php");
     ini_set ("display_errors", 0);
 
     if (!isset($_POST["ngram_"])) {
@@ -73,6 +73,7 @@
     // フォルダ読み込み //
     /////////////////////
     // 指定されたフォルダの.pdfファイルのパスを[dirname][tmp_name]で抽出
+    var_dump("フォルダ読み込み開始");
     $pdf_cnt = 0;
     $pdf_name[] = "";
     $pdf_tmp_name[] = "";
@@ -81,12 +82,14 @@
         // Zipファイル読み込み //
         ////////////////////////
         // 指定されたフォルダの.zipファイルのパスを[dirname][tmp_name]で抽出
+        var_dump("zipファイル読み込み開始");
         $zip_cnt = 0;
         $zip_name[] = "";
         $zip_tmp_name[] = "";
         for ($i = 0; $i < count($_FILES["dirname"]["tmp_name"]); $i++) {
             if (substr($_FILES["dirname"]["name"][$i], -4, 4) === ".zip") {
                 $zip_name = preg_replace("#[　 ]#u", "", $_FILES["dirname"]["name"][$i]);
+                var_dump("zipファイル" . $i . "：" . $zip_name);
                 $zip_tmp_name = $_FILES["dirname"]["tmp_name"][$i];
                 move_uploaded_file($zip_tmp_name, "./pdftotext_escape/" . $zip_name);
                 if ($zip->open("./pdftotext_escape/" . $zip_name) === true) {
@@ -97,17 +100,23 @@
                 for ($j = 0; $j < count($pdf_files); $j++) {
                     $file_name = preg_replace("#[ 　]#u", "", explode(".", $zip_name)[0]);
                     rename($pdf_files[$j], "./pdftotext_escape/pdf/" . $file_name . ".pdf");
-                }
+                } 
             }
         }
         $pdf_files = [];
         $pdf_files = glob("./pdftotext_escape/pdf/*.pdf");
         for ($i = 0; $i < count($pdf_files); $i++) {
+            var_dump("展開させてescapeさせたpdfファイル：" . $pdf_files[$i]);
+        } 
+        for ($i = 0; $i < count($pdf_files); $i++) {
             $pdf_path_name = basename($pdf_files[$i]);
             $pdf_file_name[$i] = $pdf_path_name; 
             $pdf_replace_name = preg_replace("#[ 　]#u", "", $pdf_path_name);
-            $cmd2 = __DIR__ . "\\xpdf-tools-win-4.03\\bin64\\pdftotext -enc Shift-JIS " . __DIR__ . "\\pdftotext_escape/pdf/" . $pdf_replace_name;
+            // $cmd2 = __DIR__ . "\\xpdf-tools-win-4.03\\bin64\\pdftotext -enc Shift-JIS " . __DIR__ . "\\pdftotext_escape/pdf/" . $pdf_replace_name;
+            $cmd2 = __DIR__ . "/xpdf-tools-win-4.03/bin64/pdftotext -enc Shift-JIS " . __DIR__ . "/pdftotext_escape/pdf/" . $pdf_replace_name;
+            var_dump("\$cmd2：" . $cmd2);
             exec ($cmd2, $dummy, $result2);
+            var_dump("\$result2：" . $result2);
             if ($result2 === 0) {
                 // $txt_name = explode(".", $pdf_path_name)[0] . ".txt";
                 $txt_name = explode(".", $pdf_replace_name)[0] . ".txt";
@@ -337,7 +346,7 @@
         <div class="content_box">
             <p>【フォルダ読み込み】</p>
             <p class="discription">
-                「フォルダ選択」ボタンで比較したい.docxファイルが入っているフォルダを選択し、読み込みボタンを押下することで、指定したフォルダ内の.docxファイルに書かれている文字列を取得し、類似度を計算します。<br>
+                「フォルダ選択」ボタンで比較したい.pdfファイルが圧縮されているzipファイルが入っているフォルダを選択し、読み込みボタンを押下することで、指定したフォルダ内にある圧縮ファイルの.pdfファイルに書かれている文字列を取得し、類似度を計算します。<br>
                 現状、N-gramでの類似度チェックとなっているため、N-gramの数値の指定もお願いします。
             </p>
             <div class="row input_text">
