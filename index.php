@@ -86,6 +86,12 @@
         $zip_cnt = 0;
         $zip_name[] = "";
         $zip_tmp_name[] = "";
+        if (!(file_exists(__DIR__ . "/pdftotext_escape"))) {
+            mkdir(__DIR__ . "/pdftotext_escape");
+        }
+        if (!(file_exists(__DIR__ . "/pdftotext_escape/pdf"))) {
+            mkdir(__DIR__ . "/pdftotext_escape/pdf");
+        }
         for ($i = 0; $i < count($_FILES["dirname"]["tmp_name"]); $i++) {
             if (substr($_FILES["dirname"]["name"][$i], -4, 4) === ".zip") {
                 $zip_name = preg_replace("#[　 ]#u", "", $_FILES["dirname"]["name"][$i]);
