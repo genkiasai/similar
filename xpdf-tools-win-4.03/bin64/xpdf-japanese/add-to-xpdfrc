@@ -1,9 +1,9 @@
 #----- begin Japanese support package (2011-sep-02)
-cidToUnicode	Adobe-Japan1	/home/muscle/www/similar/xpdf-tools-win-4.03/bin64/xpdfrc/Adobe-Japan1.cidToUnicode
-unicodeMap	ISO-2022-JP	/home/muscle/www/similar/xpdf-tools-win-4.03/bin64/xpdfrc/ISO-2022-JP.unicodeMap
-unicodeMap	EUC-JP		/home/muscle/www/similar/xpdf-tools-win-4.03/bin64/xpdfrc/EUC-JP.unicodeMap
-unicodeMap	Shift-JIS	/home/muscle/www/similar/xpdf-tools-win-4.03/bin64/xpdfrc/Shift-JIS.unicodeMap
-cMapDir		Adobe-Japan1	/home/muscle/www/similar/xpdf-tools-win-4.03/bin64/xpdfrc/CMap
-toUnicodeDir			/home/muscle/www/similar/xpdf-tools-win-4.03/bin64/xpdfrc/CMap
+cidToUnicode	Adobe-Japan1	C:\xampp\htdocs\similar2\xpdf-tools-win-4.03\bin64/xpdfrc/Adobe-Japan1.cidToUnicode
+unicodeMap	ISO-2022-JP	C:\xampp\htdocs\similar\xpdf-tools-win-4.03\bin64/xpdfrc/ISO-2022-JP.unicodeMap
+unicodeMap	EUC-JP		C:\xampp\htdocs\similar\xpdf-tools-win-4.03\bin64/xpdfrc/EUC-JP.unicodeMap
+unicodeMap	Shift-JIS	C:\xampp\htdocs\similar\xpdf-tools-win-4.03\bin64/xpdfrc/Shift-JIS.unicodeMap
+cMapDir		Adobe-Japan1	C:\xampp\htdocs\similar\xpdf-tools-win-4.03\bin64/xpdfrc/CMap
+toUnicodeDir			C:\xampp\htdocs\similar\xpdf-tools-win-4.03\bin64/xpdfrc/CMap
 #fontFileCC	Adobe-Japan1	/usr/..../NotoSansCJKjp-Regular.otf
 #----- end Japanese support package

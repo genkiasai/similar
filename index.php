@@ -379,6 +379,7 @@
                         for ($j = $i + 1; $j < $contents_cnt; $j++) {
                             get_ngram ($contents[$i], $_POST["ngram"], $substr1);
                             get_ngram ($contents[$j], $_POST["ngram"], $substr2);
+                            $aaa = array_intersect($substr1, $substr2);
                             similar_check ($substr1, $substr2, $perc);
                             if ($perc > $_POST["threshold"]) {
                                 echo "<p style='color: red;'>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
