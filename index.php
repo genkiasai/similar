@@ -94,7 +94,7 @@
         }
         for ($i = 0; $i < count($_FILES["dirname"]["tmp_name"]); $i++) {
             if (substr($_FILES["dirname"]["name"][$i], -4, 4) === ".zip") {
-                $zip_name = preg_replace("#[　 ]#u", "", $_FILES["dirname"]["name"][$i]);
+                $zip_name = preg_replace("#[　 ]+#um", "", $_FILES["dirname"]["name"][$i]);
                 var_dump("zipファイル" . $i . "：" . $zip_name);
                 $zip_tmp_name = $_FILES["dirname"]["tmp_name"][$i];
                 move_uploaded_file($zip_tmp_name, "./pdftotext_escape/" . $zip_name);
@@ -104,7 +104,7 @@
                 }
                 $pdf_files = glob("./pdftotext_escape/*.pdf");
                 for ($j = 0; $j < count($pdf_files); $j++) {
-                    $file_name = preg_replace("#[ 　]#u", "", explode(".", $zip_name)[0]);
+                    $file_name = preg_replace("#[ 　]+#um", "", explode(".", $zip_name)[0]);
                     rename($pdf_files[$j], "./pdftotext_escape/pdf/" . $file_name . ".pdf");
                 } 
             }
@@ -117,7 +117,7 @@
         for ($i = 0; $i < count($pdf_files); $i++) {
             $pdf_path_name = basename($pdf_files[$i]);
             $pdf_file_name[$i] = $pdf_path_name; 
-            $pdf_replace_name = preg_replace("#[ 　]#u", "", $pdf_path_name);
+            $pdf_replace_name = preg_replace("#[ 　]+#um", "", $pdf_path_name);
             // $cmd2 = __DIR__ . "\\xpdf-tools-win-4.03\\bin64\\pdftotext -enc Shift-JIS " . __DIR__ . "\\pdftotext_escape/pdf/" . $pdf_replace_name;
             $cmd2 = __DIR__ . "/xpdf-tools-win-4.03/bin64/pdftotext -enc Shift-JIS " . __DIR__ . "/pdftotext_escape/pdf/" . $pdf_replace_name;
             var_dump("\$cmd2：" . $cmd2);
@@ -130,6 +130,7 @@
                 // 文字化け
                 $file_get_contents = file_get_contents($txt_path);
                 $str = mb_convert_encoding($file_get_contents,"utf-8","sjis"); // シフトJISからUTF-8に変換
+                $str = preg_replace("#[ \n\t\r　]+#um", "", $str);
                 $contents[$i] = $str;
             }
         }
@@ -138,10 +139,24 @@
         array_map("unlink", glob("./pdftotext_escape/*.zip"));
         array_map("unlink", glob("./pdftotext_escape/*.txt"));
     }
-    
 
-
-
+    // 計算した類似度の表示
+    // $contents_cnt = count($contents);
+    // if ($contents_cnt >=  2) {
+    //     for ($i = 0; $i < $contents_cnt - 1; $i++) {
+    //         for ($j = $i + 1; $j < $contents_cnt; $j++) {
+    //             get_ngram ($contents[$i], $_POST["ngram"], $substr1);
+    //             get_ngram ($contents[$j], $_POST["ngram"], $substr2);
+    //             $aaa = array_intersect($substr1, $substr2);
+    //             similar_check ($substr1, $substr2, $perc);
+    //             if ($perc > $_POST["threshold"]) {
+    //                 echo "<p style='color: red;'>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
+    //             } else {
+    //                 echo "<p>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
+    //             }
+    //         }
+    //     }
+    // }
 ?>
 
 <!DOCTYPE html>
@@ -232,6 +247,11 @@
 
         .error {
             color: red;
+        }
+
+        .outputArea {
+            border: 1px solid #000;
+            background-color: #fff;
         }
     </style>
 </head>
@@ -380,22 +400,217 @@
             <?php
                 // 計算した類似度の表示
                 $contents_cnt = count($contents);
-                if ($contents_cnt >=  2) {
-                    for ($i = 0; $i < $contents_cnt - 1; $i++) {
-                        for ($j = $i + 1; $j < $contents_cnt; $j++) {
+                if ($contents_cnt >=  2) :
+                    for ($i = 0; $i < $contents_cnt - 1; $i++) :
+            ?>
+            <?php
+                        for ($j = $i + 1; $j < $contents_cnt; $j++) :
                             get_ngram ($contents[$i], $_POST["ngram"], $substr1);
                             get_ngram ($contents[$j], $_POST["ngram"], $substr2);
                             $aaa = array_intersect($substr1, $substr2);
+                            $bbb = array_intersect($substr2, $substr1);
+                            // 一致した要素を赤文字で表示するための処理
+                            // $a：要素数のカウントアップ
+                            $a = 0;
+                            // ひとつ前の要素のインデックス番号メモリ
+                            $b = 0;
+                            // インクリメント
+                            $c = 0;
+                            $continuous = [];
+                            $continuous1 = "";
+                            $continuous2 = "";
+                            $flug = false;
+                            $break = false;
+                            $continuousStr = "";
+                            $elementRed1 = [];
+                            while (true) {
+                                $element = $aaa[$c];
+                                if (!empty($element) or $break) {
+                                    $a++;
+                                    if (($c - $b == 1) and !$break) { // もし連番の要素だったら
+                                        $continuous[count($continuous)] = mb_substr($aaa[$b], 0, 1);
+                                        $flug = true;
+                                    } elseif (($c - $b == 2) and !$break) { // もし一個飛ばしの要素だったら
+                                        $continuous[count($continuous)] = mb_substr($aaa[$b], 0, 2);
+                                        $flug = true;
+                                    } elseif (($c - $b == 3) and !$break) { // もし二個飛ばしの要素だったら
+                                        $continuous[count($continuous)] = mb_substr($aaa[$b], 0, 3);
+                                        $flug = true;
+                                    } elseif ($c != 0) {
+                                            for ($k=0; $k < count($continuous); $k++) { 
+                                                $continuousStr = $continuousStr . $continuous[$k];
+                                            }
+                                            $elementRed1[count($elementRed1)] = $continuousStr . $aaa[$b];
+                                            $continuous = [];
+                                            $continuousStr = "";
+                                            $flug = false;
+                                    }
+                                    if ($break) {
+                                        break;
+                                    }
+                                    if ($a >= count($aaa)) {
+                                        $break = true;
+                                    }
+                                    $b = $c;
+                                }
+                                $c++;
+                            }
+
+                            
+                            // 一致した要素を赤文字で表示するための処理
+                            // $a：要素数のカウントアップ
+                            $a = 0;
+                            // ひとつ前の要素のインデックス番号メモリ
+                            $b = 0;
+                            // インクリメント
+                            $c = 0;
+                            $continuous = [];
+                            $continuous1 = "";
+                            $continuous2 = "";
+                            $flug = false;
+                            $break = false;
+                            $continuousStr = "";
+                            $elementRed2 = [];
+                            while (true) {
+                                $element = $bbb[$c];
+                                if (!empty($element) or $break) {
+                                    $a++;
+                                    if (($c - $b == 1) and !$break) { // もし連番の要素だったら
+                                        $continuous[count($continuous)] = mb_substr($bbb[$b], 0, 1);
+                                        $flug = true;
+                                    } elseif (($c - $b == 2) and !$break) { // もし一個飛ばしの要素だったら
+                                        $continuous[count($continuous)] = mb_substr($bbb[$b], 0, 2);
+                                        $flug = true;
+                                    } elseif (($c - $b == 3) and !$break) { // もし二個飛ばしの要素だったら
+                                        $continuous[count($continuous)] = mb_substr($bbb[$b], 0, 3);
+                                        $flug = true;
+                                    } elseif ($c != 0) {
+                                            for ($k=0; $k < count($continuous); $k++) { 
+                                                $continuousStr = $continuousStr . $continuous[$k];
+                                            }
+                                            $elementRed2[count($elementRed2)] = $continuousStr . $bbb[$b];
+                                            $continuous = [];
+                                            $continuousStr = "";
+                                            $flug = false;
+                                    }
+                                    if ($break) {
+                                        break;
+                                    }
+                                    if ($a >= count($bbb)) {
+                                        $break = true;
+                                    }
+                                    $b = $c;
+                                }
+                                $c++;
+                            }
+                            
+                            for ($k=0; $k < count($elementRed1); $k++) { 
+                                $contents[$i] = preg_replace("#$elementRed1[$k]+#um", "<span style=color:red>$elementRed1[$k]</span>", $contents[$i]);
+                            }
+                            // for ($k=0; $k < count($elementRed2); $k++) { 
+                            //     $contents[$j] = preg_replace("#$elementRed2[$k]+#um", "<span style=color:red>$elementRed2[$k]</span>", $contents[$j]);
+                            // }
+                            
+                            $compare = "";
+                            $newElementRed2 = [];
+                            $newElementRed22 = [];
+                            for ($k=0; $k < count($elementRed2); $k++) {
+                                $compare = $elementRed2[$k]; 
+                                for ($l=0; $l < count($elementRed2); $l++) {
+                                    $explode = [];
+                                    if ($compare != $elementRed2[$l]) {
+                                        // @TODO かさなった要素の比較される側の配列のインデックスの要素を覚えておいて最後にそのインデックスの要素を削除
+                                        if((strpos($elementRed2[$l], $compare) !== false) or (strpos($compare, $elementRed2[$l]) !== false)){
+                                            $explode = explode($compare, $elementRed2[$l], -1);
+                                            $asdf = preg_split("/$compare/", $elementRed2[$l]);
+                                            if (!isset($explode)) {
+                                                $explode = explode($elementRed2[$l], $compare, -1);
+                                            }
+                                            $array = array($elementRed2[$l]);
+                                            // $elementRed2 = array_diff($elementRed2, $array);
+                                            $array = "";
+                                            // $newElementRed2 = array_merge($newElementRed2, $explode);
+                                            $newElementRed2 = array_merge($newElementRed2, $asdf);
+                                        }
+                                    }
+                                }
+                            }
+
+                            
+                            $elementRed2 = array_merge($elementRed2, $newElementRed2);
+                            for ($k=0; $k < count($elementRed2); $k++) { 
+                                if ($elementRed2[$k] != "") {
+                                    $contents[$j] = preg_replace("#$elementRed2[$k]+#um", "<span style=color:red>$elementRed2[$k]</span>", $contents[$j]);
+                                }
+                            }
+                            // $outputTest = "";
+                            // $elementRed2 = array_merge($elementRed2, $newElementRed2);
+                            // for ($k=0; $k < count($elementRed2); $k++) { 
+                            //     $outputTest = preg_replace("#$elementRed2[$k]+#um", "<span style=color:red>$elementRed2[$k]</span>", $contents[$j]);
+                            // }
+
+
+                            // $empty = array("");
+                            // $empty = [""];
+                            // $newElementRed2 = array_diff($newElementRed2, $empty);
+
+                            // for ($k=0; $k < count($elementRed2); $k++) { 
+                            //     $elementRed22[$k] = "<span style=color:red>$elementRed2[$k]</span>";
+                            // }
+                            // for ($k=0; $k < count($elementRed2); $k++) { 
+                            //     $elementRed222[$k] = "/$elementRed2[$k]/";
+                            // }
+
+                            // $contents[$j] = preg_replace($elementRed222, $elementRed22, $contents[$j]);
+
+                            // for ($k=0; $k < count($elementRed2); $k++) { 
+                            //     $contents[$j] = preg_replace("#$elementRed2[$k]+#um", "<span style=color:red>$elementRed2[$k]</span>", $contents[$j]);
+                            //     # code...
+                            // }
+
                             similar_check ($substr1, $substr2, $perc);
                             if ($perc > $_POST["threshold"]) {
                                 echo "<p style='color: red;'>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
                             } else {
-                                echo "<p>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
+                                echo "<p>上段ファイル" . ($i + 1) . "と" . "下段ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
                             }
 
-                        }
-                    }
-                }
+                            // @TODO
+                            // for ($r=0; $r < count($bbb); $r++) { 
+                            //     for ($s=0; $s < count($substr2); $s++) { 
+                            //         if ($bbb[$r] == $substr2[$s]) {
+                            //             $substr2[$s] = str_replace($bbb[$r], "<span style=color:red>$bbb[$r]</span>", $substr2[$s]);
+                            //         }
+                            //     }
+                            // }
+
+                            // for ($r=0; $r < count($substr2); $r+=3) {
+                            //     $outputTest = $outputTest . $substr2[$r];
+                            // } 
+            ?>
+                            <div class="outputArea" id="outputArea1"><?php echo $contents[$i]; ?></div>
+                            <div class="outputArea" id="outputArea2"><?php echo $contents[$j]; ?></div>
+                            <!-- <div class="outputArea" id="outputArea3"><?php // echo $outputTest; ?></div> -->
+            <?php
+                            $contents[$i] = preg_replace("#<span style=color:red>|</span>#", "", $contents[$i]);
+                            $contents[$j] = preg_replace("#<span style=color:red>|</span>#", "", $contents[$j]);
+                        endfor;
+                    endfor;
+                endif;
+            ?>
+            <?php
+                //             get_ngram ($contents[$i], $_POST["ngram"], $substr1);
+                //             get_ngram ($contents[$j], $_POST["ngram"], $substr2);
+                //             $aaa = array_intersect($substr1, $substr2);
+                //             similar_check ($substr1, $substr2, $perc);
+                //             if ($perc > $_POST["threshold"]) {
+                //                 echo "<p style='color: red;'>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
+                //             } else {
+                //                 echo "<p>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
+                //             }
+                //         }
+                //     }
+                // }
             ?>
         </div>
 

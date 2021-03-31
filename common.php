@@ -4,6 +4,7 @@
     // N-gramの取得
     function get_ngram($str, $n, &$substr) {
         $substr = [];
+        $str = preg_replace("#[ \n\t\r　]+#um", "", $str);
         $len = mb_strlen($str);
         // 文字数が0もしくはN数より少ない場合はfalseを返す
         if ($len <= 0 || $len < $n) return false;
