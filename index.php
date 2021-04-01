@@ -518,19 +518,21 @@
                                 $compare = $elementRed2[$k]; 
                                 for ($l=0; $l < count($elementRed2); $l++) {
                                     $explode = [];
+                                    $split = [];
                                     if ($compare != $elementRed2[$l]) {
                                         // @TODO かさなった要素の比較される側の配列のインデックスの要素を覚えておいて最後にそのインデックスの要素を削除
                                         if((strpos($elementRed2[$l], $compare) !== false) or (strpos($compare, $elementRed2[$l]) !== false)){
-                                            $explode = explode($compare, $elementRed2[$l], -1);
-                                            $asdf = preg_split("/$compare/", $elementRed2[$l]);
+                                            // $explode = explode($compare, $elementRed2[$l], -1);
+                                            $split = preg_split("/$compare/", $elementRed2[$l]);
                                             if (!isset($explode)) {
-                                                $explode = explode($elementRed2[$l], $compare, -1);
+                                                // $explode = explode($elementRed2[$l], $compare, -1);
+                                                // $split = preg_split("/$compare/", $elementRed2[$l]);
                                             }
                                             $array = array($elementRed2[$l]);
                                             // $elementRed2 = array_diff($elementRed2, $array);
                                             $array = "";
                                             // $newElementRed2 = array_merge($newElementRed2, $explode);
-                                            $newElementRed2 = array_merge($newElementRed2, $asdf);
+                                            $newElementRed2 = array_merge($newElementRed2, $split);
                                         }
                                     }
                                 }
