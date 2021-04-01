@@ -507,68 +507,50 @@
                             for ($k=0; $k < count($elementRed1); $k++) { 
                                 $contents[$i] = preg_replace("#$elementRed1[$k]+#um", "<span style=color:red>$elementRed1[$k]</span>", $contents[$i]);
                             }
-                            // for ($k=0; $k < count($elementRed2); $k++) { 
-                            //     $contents[$j] = preg_replace("#$elementRed2[$k]+#um", "<span style=color:red>$elementRed2[$k]</span>", $contents[$j]);
-                            // }
                             
-                            $compare = "";
-                            $newElementRed2 = [];
-                            $newElementRed22 = [];
-                            for ($k=0; $k < count($elementRed2); $k++) {
-                                $compare = $elementRed2[$k]; 
-                                for ($l=0; $l < count($elementRed2); $l++) {
-                                    $explode = [];
-                                    $split = [];
-                                    if ($compare != $elementRed2[$l]) {
-                                        // @TODO かさなった要素の比較される側の配列のインデックスの要素を覚えておいて最後にそのインデックスの要素を削除
-                                        if((strpos($elementRed2[$l], $compare) !== false) or (strpos($compare, $elementRed2[$l]) !== false)){
-                                            // $explode = explode($compare, $elementRed2[$l], -1);
-                                            $split = preg_split("/$compare/", $elementRed2[$l]);
-                                            if (!isset($explode)) {
-                                                // $explode = explode($elementRed2[$l], $compare, -1);
-                                                // $split = preg_split("/$compare/", $elementRed2[$l]);
+                            $endFlug = true;
+                            while ($endFlug === true) {
+                                $compare = "";              // preg_splitの第一引数で使用するパターン
+                                $newElementRed2 = [];       // preg_splitで分割された要素のまとまり
+                                $newElementRed22 = [];      // 
+                                $deleteIndexMemory = [];    // preg_splitで引っかかった要素のインデックス番号記憶変数→あとで消すために記憶しておく
+                                $m = 0;                     // ループ回数カウンター
+                                $endFlug = false;           // while文を抜けるフラグ
+                                for ($k=0; $k < count($elementRed2); $k++) {
+                                    $compare = $elementRed2[$k]; 
+                                    if ($compare != "") {
+                                        for ($l=0; $l < count($elementRed2); $l++) {
+                                            $explode = [];
+                                            $split = [];
+                                            if ($compare != $elementRed2[$l]) {
+                                                // @TODO かさなった要素の比較される側の配列のインデックスの要素を覚えておいて最後にそのインデックスの要素を削除
+                                                if(strpos($elementRed2[$l], $compare) !== false){
+                                                    $split = preg_split("/$compare/", $elementRed2[$l]);
+                                                    $deleteIndexMemory[$m] = $l;
+                                                    $newElementRed2 = array_merge($newElementRed2, $split);
+                                                    $endFlug = true;
+                                                    $m++;
+                                                }
                                             }
-                                            $array = array($elementRed2[$l]);
-                                            // $elementRed2 = array_diff($elementRed2, $array);
-                                            $array = "";
-                                            // $newElementRed2 = array_merge($newElementRed2, $explode);
-                                            $newElementRed2 = array_merge($newElementRed2, $split);
                                         }
                                     }
                                 }
+                                // 元の一致要素と分割した一致要素をひとつにまとめる
+                                $elementRed2 = array_merge($elementRed2, $newElementRed2);
+                                // 元の一致要素から分割された要素を削除してインデックスを詰める
+                                if (count($deleteIndexMemory) > 0) {
+                                    for ($k=0; $k < count($deleteIndexMemory) ; $k++) { 
+                                        unset($elementRed2[$deleteIndexMemory[$k]]);
+                                    }
+                                }
+                                $elementRed2 = array_values($elementRed2);
                             }
 
-                            
-                            $elementRed2 = array_merge($elementRed2, $newElementRed2);
                             for ($k=0; $k < count($elementRed2); $k++) { 
                                 if ($elementRed2[$k] != "") {
                                     $contents[$j] = preg_replace("#$elementRed2[$k]+#um", "<span style=color:red>$elementRed2[$k]</span>", $contents[$j]);
                                 }
                             }
-                            // $outputTest = "";
-                            // $elementRed2 = array_merge($elementRed2, $newElementRed2);
-                            // for ($k=0; $k < count($elementRed2); $k++) { 
-                            //     $outputTest = preg_replace("#$elementRed2[$k]+#um", "<span style=color:red>$elementRed2[$k]</span>", $contents[$j]);
-                            // }
-
-
-                            // $empty = array("");
-                            // $empty = [""];
-                            // $newElementRed2 = array_diff($newElementRed2, $empty);
-
-                            // for ($k=0; $k < count($elementRed2); $k++) { 
-                            //     $elementRed22[$k] = "<span style=color:red>$elementRed2[$k]</span>";
-                            // }
-                            // for ($k=0; $k < count($elementRed2); $k++) { 
-                            //     $elementRed222[$k] = "/$elementRed2[$k]/";
-                            // }
-
-                            // $contents[$j] = preg_replace($elementRed222, $elementRed22, $contents[$j]);
-
-                            // for ($k=0; $k < count($elementRed2); $k++) { 
-                            //     $contents[$j] = preg_replace("#$elementRed2[$k]+#um", "<span style=color:red>$elementRed2[$k]</span>", $contents[$j]);
-                            //     # code...
-                            // }
 
                             similar_check ($substr1, $substr2, $perc);
                             if ($perc > $_POST["threshold"]) {
@@ -576,43 +558,15 @@
                             } else {
                                 echo "<p>上段ファイル" . ($i + 1) . "と" . "下段ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
                             }
-
-                            // @TODO
-                            // for ($r=0; $r < count($bbb); $r++) { 
-                            //     for ($s=0; $s < count($substr2); $s++) { 
-                            //         if ($bbb[$r] == $substr2[$s]) {
-                            //             $substr2[$s] = str_replace($bbb[$r], "<span style=color:red>$bbb[$r]</span>", $substr2[$s]);
-                            //         }
-                            //     }
-                            // }
-
-                            // for ($r=0; $r < count($substr2); $r+=3) {
-                            //     $outputTest = $outputTest . $substr2[$r];
-                            // } 
             ?>
                             <div class="outputArea" id="outputArea1"><?php echo $contents[$i]; ?></div>
                             <div class="outputArea" id="outputArea2"><?php echo $contents[$j]; ?></div>
-                            <!-- <div class="outputArea" id="outputArea3"><?php // echo $outputTest; ?></div> -->
             <?php
                             $contents[$i] = preg_replace("#<span style=color:red>|</span>#", "", $contents[$i]);
                             $contents[$j] = preg_replace("#<span style=color:red>|</span>#", "", $contents[$j]);
                         endfor;
                     endfor;
                 endif;
-            ?>
-            <?php
-                //             get_ngram ($contents[$i], $_POST["ngram"], $substr1);
-                //             get_ngram ($contents[$j], $_POST["ngram"], $substr2);
-                //             $aaa = array_intersect($substr1, $substr2);
-                //             similar_check ($substr1, $substr2, $perc);
-                //             if ($perc > $_POST["threshold"]) {
-                //                 echo "<p style='color: red;'>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
-                //             } else {
-                //                 echo "<p>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
-                //             }
-                //         }
-                //     }
-                // }
             ?>
         </div>
 
