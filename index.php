@@ -620,7 +620,8 @@
                             // 一文字もしくは二文字だけの赤文字は黒に戻す
                             $str1_2 = [];
                             $afdh = "";
-                            $afdh = mb_ereg("<span style=color:red>こ</span>", $contents[$j], $str1_2);
+                            $afdh = mb_ereg("^(?!.*</span>)<span style=color:red>こ</span>", $contents[$j], $str1_2);
+                            // $afdh = mb_ereg("<span style=color:red>こ</span>", $contents[$j], $str1_2);
                             // preg_match("/(<span style=color:red>こ</span>)/", $contents[$j], $str1_2);
                             // preg_match("/(</span>.{1|2})|(.{1|2}<span style=color:red>)/", $contents[$j], $str1_2);
 
