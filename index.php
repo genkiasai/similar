@@ -617,10 +617,28 @@
                                 }
                             }
 
+                            // 次の正規表現では直前にbarがないfoo(barは含まない)に一致します．
+                            // (?<!bar)foo
+
                             // 一文字もしくは二文字だけの赤文字は黒に戻す
-                            $str1_2 = [];
-                            $afdh = "";
-                            $afdh = mb_ereg("^(?!.*</span>)<span style=color:red>こ</span>", $contents[$j], $str1_2);
+                            $styleStr1_2 = [];
+                            $bMacth = "";
+                            $str1_2 = "";
+                            $pattern = ["/<span style=color:red>/", "/<\/span>/"];
+                            $replacement = ["", ""];
+                            // 一文字もしくは二文字の赤文字を探す
+                            $bMacth = mb_ereg("(?<!</span>)<span style=color:red>.{1,2}</span>(?!<span style=color:red>)", $contents[$j], $styleStr1_2);
+                            // 一文字もしくは二文字の赤文字があったら
+                            if ($bMacth = true) {
+                                for ($k=0; $k < count($styleStr1_2); $k++) { 
+                                    // 一文字もしくは二文字のタグを外す
+                                    $str1_2 = preg_replace($pattern, $replacement, $styleStr1_2[$k]);
+                                    $contents[$j] = preg_replace("/(?<!<\/span>)<span style=color:red>$str1_2<\/span>(?!<span style=color:red>)/", $str1_2, $contents[$j]);
+                                }
+                            }
+
+
+                            // $afdh = mb_ereg("^(?!.*</span>)<span style=color:red>こ</span>", $contents[$j], $str1_2);
                             // $afdh = mb_ereg("<span style=color:red>こ</span>", $contents[$j], $str1_2);
                             // preg_match("/(<span style=color:red>こ</span>)/", $contents[$j], $str1_2);
                             // preg_match("/(</span>.{1|2})|(.{1|2}<span style=color:red>)/", $contents[$j], $str1_2);
