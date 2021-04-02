@@ -600,19 +600,32 @@
                                 $elementRed2 = array_values($elementRed2);
                             }
 
+                            // 同じ要素は削除する
                             for ($k=0; $k < count($elementRed2); $k++) { 
                                 $diff = $elementRed2[$k];
                                 $elementRed2 = array_diff($elementRed2, array($diff));
                                 $elementRed2 = array_values($elementRed2);
-                                $elementRed2 = array_splice($elementRed2, $k, 0, $diff);
+                                array_splice($elementRed2, $k, 0, $diff);
                             }
 
                             // 赤文字にする
                             for ($k=0; $k < count($elementRed2); $k++) { 
                                 if ($elementRed2[$k] != "") {
-                                    $contents[$j] = preg_replace("#$elementRed2[$k]+#um", "<span style=color:red>$elementRed2[$k]</span>", $contents[$j]);
+                                    $pattern = "#$elementRed2[$k]+#um";
+                                    $replacement = "<span style=color:red>$elementRed2[$k]</span>";
+                                    $contents[$j] = preg_replace($pattern, $replacement, $contents[$j]);
                                 }
                             }
+
+                            // 一文字もしくは二文字だけの赤文字は黒に戻す
+                            $str1_2 = [];
+                            $afdh = "";
+                            $afdh = mb_ereg("<span style=color:red>こ</span>", $contents[$j], $str1_2);
+                            // preg_match("/(<span style=color:red>こ</span>)/", $contents[$j], $str1_2);
+                            // preg_match("/(</span>.{1|2})|(.{1|2}<span style=color:red>)/", $contents[$j], $str1_2);
+
+
+
                             // for ($k=0; $k < count($elementRed2); $k++) { 
                             //     if ($elementRed2[$k] != "") {
                             //         $contents[$j] = preg_replace("#$elementRed2[$k]+#um", "<span style=color:red>$elementRed2[$k]</span>", $contents[$j]);
