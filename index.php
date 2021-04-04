@@ -73,7 +73,7 @@
     // フォルダ読み込み //
     /////////////////////
     // 指定されたフォルダの.pdfファイルのパスを[dirname][tmp_name]で抽出
-    var_dump("フォルダ読み込み開始");
+    // var_dump("フォルダ読み込み開始");
     $pdf_cnt = 0;
     $pdf_name[] = "";
     $pdf_tmp_name[] = "";
@@ -82,81 +82,76 @@
         // Zipファイル読み込み //
         ////////////////////////
         // 指定されたフォルダの.zipファイルのパスを[dirname][tmp_name]で抽出
-        var_dump("zipファイル読み込み開始");
+        // var_dump("zipファイル読み込み開始");
         $zip_cnt = 0;
         $zip_name[] = "";
         $zip_tmp_name[] = "";
+        // ./pdftotext_escape/pdfのフォルダの存在を確認してなかったら作る
         if (!(file_exists(__DIR__ . "/pdftotext_escape"))) {
             mkdir(__DIR__ . "/pdftotext_escape");
         }
         if (!(file_exists(__DIR__ . "/pdftotext_escape/pdf"))) {
             mkdir(__DIR__ . "/pdftotext_escape/pdf");
         }
+        // 指定されたフォルダのzipファイルをpdftotext_escapeに移動させて展開して
         for ($i = 0; $i < count($_FILES["dirname"]["tmp_name"]); $i++) {
             if (substr($_FILES["dirname"]["name"][$i], -4, 4) === ".zip") {
                 $zip_name = preg_replace("#[　 ]+#um", "", $_FILES["dirname"]["name"][$i]);
                 var_dump("zipファイル" . $i . "：" . $zip_name);
                 $zip_tmp_name = $_FILES["dirname"]["tmp_name"][$i];
+                // 指定されたフォルダのzipファイルをpdftotext_escapeに移動
                 move_uploaded_file($zip_tmp_name, "./pdftotext_escape/" . $zip_name);
+                // 展開
                 if ($zip->open("./pdftotext_escape/" . $zip_name) === true) {
                     $zip->extractTo("./pdftotext_escape/");
                     $zip->close();
                 }
+                // 展開させたファイルのpdfファイルを捕まえる
                 $pdf_files = glob("./pdftotext_escape/*.pdf");
                 for ($j = 0; $j < count($pdf_files); $j++) {
+                    // pdfファイルの名前をzipファイルの名前にする（文字化け防止）
                     $file_name = preg_replace("#[ 　]+#um", "", explode(".", $zip_name)[0]);
+                    // pdfファイルをpdftotext_escape/pdfに移動させる
                     rename($pdf_files[$j], "./pdftotext_escape/pdf/" . $file_name . ".pdf");
                 } 
             }
         }
+
         $pdf_files = [];
         $pdf_files = glob("./pdftotext_escape/pdf/*.pdf");
+        // for ($i = 0; $i < count($pdf_files); $i++) {
+        //     var_dump("展開させてescapeさせたpdfファイル：" . $pdf_files[$i]);
+        // } 
+        // pdftotext_escape/pdfのpdfファイルの数だけループ
         for ($i = 0; $i < count($pdf_files); $i++) {
-            var_dump("展開させてescapeさせたpdfファイル：" . $pdf_files[$i]);
-        } 
-        for ($i = 0; $i < count($pdf_files); $i++) {
-            $pdf_path_name = basename($pdf_files[$i]);
-            $pdf_file_name[$i] = $pdf_path_name; 
-            $pdf_replace_name = preg_replace("#[ 　]+#um", "", $pdf_path_name);
-            // $cmd2 = __DIR__ . "\\xpdf-tools-win-4.03\\bin64\\pdftotext -enc Shift-JIS " . __DIR__ . "\\pdftotext_escape/pdf/" . $pdf_replace_name;
+            $pdf_path_name = basename($pdf_files[$i]);  // pdfファイル名
+            $pdf_file_name[$i] = $pdf_path_name;    // pdfファイル名を配列に格納
+            $pdf_replace_name = preg_replace("#[ 　]+#um", "", $pdf_path_name); // pdfファイル名の空白文字を削除
+            // pdfファイルをtxtファイルに変換するコマンド
             $cmd2 = __DIR__ . "/xpdf-tools-win-4.03/bin64/pdftotext -enc Shift-JIS " . __DIR__ . "/pdftotext_escape/pdf/" . $pdf_replace_name;
-            var_dump("\$cmd2：" . $cmd2);
+            //var_dump("\$cmd2：" . $cmd2);
+            // コマンド実行
             exec ($cmd2, $dummy, $result2);
-            var_dump("\$result2：" . $result2);
+            // var_dump("\$result2：" . $result2);
+            // コマンドが無事実行出来たら
             if ($result2 === 0) {
-                // $txt_name = explode(".", $pdf_path_name)[0] . ".txt";
                 $txt_name = explode(".", $pdf_replace_name)[0] . ".txt";
                 $txt_path = __DIR__ . "\\pdftotext_escape\\pdf\\" . $txt_name;
-                // 文字化け
+                // txtファイルのテキストを取得。文字化け
                 $file_get_contents = file_get_contents($txt_path);
+                // エンコーディング
                 $str = mb_convert_encoding($file_get_contents,"utf-8","sjis"); // シフトJISからUTF-8に変換
+                // テキストの空白文字、改行、タブ、
                 $str = preg_replace("#[ \n\t\r　]+#um", "", $str);
                 $contents[$i] = $str;
             }
         }
+        // ファイル削除
         array_map("unlink", glob("./pdftotext_escape/pdf/*.pdf"));
         array_map("unlink", glob("./pdftotext_escape/pdf/*.txt"));
         array_map("unlink", glob("./pdftotext_escape/*.zip"));
         array_map("unlink", glob("./pdftotext_escape/*.txt"));
     }
-
-    // 計算した類似度の表示
-    // $contents_cnt = count($contents);
-    // if ($contents_cnt >=  2) {
-    //     for ($i = 0; $i < $contents_cnt - 1; $i++) {
-    //         for ($j = $i + 1; $j < $contents_cnt; $j++) {
-    //             get_ngram ($contents[$i], $_POST["ngram"], $substr1);
-    //             get_ngram ($contents[$j], $_POST["ngram"], $substr2);
-    //             $aaa = array_intersect($substr1, $substr2);
-    //             similar_check ($substr1, $substr2, $perc);
-    //             if ($perc > $_POST["threshold"]) {
-    //                 echo "<p style='color: red;'>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
-    //             } else {
-    //                 echo "<p>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
-    //             }
-    //         }
-    //     }
-    // }
 ?>
 
 <!DOCTYPE html>
@@ -389,7 +384,6 @@
                     <p class="error col-12 col-sm-12 col-md-12 p-0">読み込むフォルダを指定してください</p>
                 <?php endif; ?>
                 <input type="submit" class="col-12 col-sm-12 col-md-12" id="read_dir" name="read_dir" value="読み込み">
-                <?php // var_dump($_FILES["dirname"]["name"]); ?>
                 <?php for ($i = 0; $i < count($contents); $i++): ?>
                     <!-- @TODO ファイル名 -->
                     <p>ファイル<?php echo $i + 1; ?>：<?php echo $pdf_file_name[$i]; ?></p>
@@ -398,111 +392,76 @@
             </div>
 
             <?php
+                // 読み込んだファイルの数
                 $contents_cnt = count($contents);
+                // 読み込んだファイルの数が2以上だったら
                 if ($contents_cnt >=  2) :
+                    // 読みこんだファイルの数だけループ
                     for ($i = 0; $i < $contents_cnt - 1; $i++) :
             ?>
             <?php
+                        // 読み込んだファイルの総当たりループ
                         for ($j = $i + 1; $j < $contents_cnt; $j++) :
+                            // N-gramを取得
                             get_ngram ($contents[$i], $_POST["ngram"], $substr1);
                             get_ngram ($contents[$j], $_POST["ngram"], $substr2);
-                            $aaa = array_intersect($substr1, $substr2);
-                            $bbb = array_intersect($substr2, $substr1);
-                            // 一致した要素を赤文字で表示するための処理
+                            // 取得したN-gramで同じ要素を取得
+                            $intersect1 = array_intersect($substr1, $substr2);
+                            $intersect2 = array_intersect($substr2, $substr1);
+                            ///////////////////////////////////////////
+                            // 一致した要素を赤文字で表示するための処理 //
+                            //////////////////////////////////////////
                             // $a：要素数のカウントアップ
                             $a = 0;
                             // ひとつ前の要素のインデックス番号メモリ
                             $b = 0;
                             // インクリメント
                             $c = 0;
-                            $continuous = [];
-                            $continuous1 = "";
-                            $continuous2 = "";
-                            $flug = false;
-                            $break = false;
-                            $continuousStr = "";
-                            $elementRed1 = [];
+                            $continuous = [];       // 連続要素を記憶する変数
+                            $break = false;         // すべての要素をループしたかどうかのフラグ
+                            $continuousStr = "";    // 記憶しておいた連続要素を一つの文字列に連結する変数 
+                            $elementRed1 = [];      // 赤文字にすべき要素を格納する配列
+                            // すべての要素を回るまでループ
                             while (true) {
-                                $element = $aaa[$c];
+                                $element = $intersect1[$c];
+                                // ループ回数番目のインデックスに要素があったら
                                 if (!empty($element) or $break) {
-                                    $a++;
+                                    $a++;   // 要素数があったからカウントアップ
                                     if (($c - $b == 1) and !$break) { // もし連番の要素だったら
-                                        $continuous[count($continuous)] = mb_substr($aaa[$b], 0, 1);
-                                        $flug = true;
+                                        // ひとつ前の要素の先頭文字だけ取得
+                                        $continuous[count($continuous)] = mb_substr($intersect1[$b], 0, 1);
                                     } elseif (($c - $b == 2) and !$break) { // もし一個飛ばしの要素だったら
-                                        $continuous[count($continuous)] = mb_substr($aaa[$b], 0, 2);
-                                        $flug = true;
+                                        // ひとつ前の要素の先頭2文字を取得
+                                        $continuous[count($continuous)] = mb_substr($intersect1[$b], 0, 2);
                                     } elseif (($c - $b == 3) and !$break) { // もし二個飛ばしの要素だったら
-                                        $continuous[count($continuous)] = mb_substr($aaa[$b], 0, 3);
-                                        $flug = true;
-                                    } elseif ($c != 0) {
+                                        // ひとつ前の要素の先頭3文字を取得
+                                        $continuous[count($continuous)] = mb_substr($intersect1[$b], 0, 3);
+                                    } elseif ($c != 0) {    // 赤文字の連続文字列じゃなくて最初の要素じゃなかったら
+                                            // 連続文字列の配列の要素をひとつの文字列にする
                                             for ($k=0; $k < count($continuous); $k++) { 
                                                 $continuousStr = $continuousStr . $continuous[$k];
                                             }
-                                            $elementRed1[count($elementRed1)] = $continuousStr . $aaa[$b];
+                                            // 連続文字列の最後の要素は全文字結合
+                                            $elementRed1[count($elementRed1)] = $continuousStr . $intersect1[$b];
+                                            // 変数初期化
                                             $continuous = [];
                                             $continuousStr = "";
-                                            $flug = false;
                                     }
+                                    // すべての要素をループしたかどうかのフラグが立っていたら
                                     if ($break) {
                                         break;
                                     }
-                                    if ($a >= count($aaa)) {
+                                    // すべての要素をループしたらフラグを立てる
+                                    if ($a >= count($intersect1)) {
                                         $break = true;
                                     }
+                                    // ループ回数番目のインデックスに要素があったことを記憶する
                                     $b = $c;
                                 }
+                                // ループ回数インクリメント
                                 $c++;
                             }
-
-                            
-                            // 一致した要素を赤文字で表示するための処理
-                            // $a：要素数のカウントアップ
-                            $a = 0;
-                            // ひとつ前の要素のインデックス番号メモリ
-                            $b = 0;
-                            // インクリメント
-                            $c = 0;
-                            $continuous = [];
-                            $continuous1 = "";
-                            $continuous2 = "";
-                            $flug = false;
-                            $break = false;
-                            $continuousStr = "";
-                            $elementRed2 = [];
-                            while (true) {
-                                $element = $bbb[$c];
-                                if (!empty($element) or $break) {
-                                    $a++;
-                                    if (($c - $b == 1) and !$break) { // もし連番の要素だったら
-                                        $continuous[count($continuous)] = mb_substr($bbb[$b], 0, 1);
-                                        $flug = true;
-                                    } elseif (($c - $b == 2) and !$break) { // もし一個飛ばしの要素だったら
-                                        $continuous[count($continuous)] = mb_substr($bbb[$b], 0, 2);
-                                        $flug = true;
-                                    } elseif (($c - $b == 3) and !$break) { // もし二個飛ばしの要素だったら
-                                        $continuous[count($continuous)] = mb_substr($bbb[$b], 0, 3);
-                                        $flug = true;
-                                    } elseif ($c != 0) {
-                                            for ($k=0; $k < count($continuous); $k++) { 
-                                                $continuousStr = $continuousStr . $continuous[$k];
-                                            }
-                                            $elementRed2[count($elementRed2)] = $continuousStr . $bbb[$b];
-                                            $continuous = [];
-                                            $continuousStr = "";
-                                            $flug = false;
-                                    }
-                                    if ($break) {
-                                        break;
-                                    }
-                                    if ($a >= count($bbb)) {
-                                        $break = true;
-                                    }
-                                    $b = $c;
-                                }
-                                $c++;
-                            }                            
-
+                            // 各要素の文字列にかぶりがあったら分解する処理
                             $endFlug = true;
                             while ($endFlug === true) {
                                 $compare = "";              // preg_splitの第一引数で使用するパターン
@@ -510,16 +469,24 @@
                                 $deleteIndexMemory = [];    // preg_splitで引っかかった要素のインデックス番号記憶変数→あとで消すために記憶しておく
                                 $m = 0;                     // ループ回数カウンター
                                 $endFlug = false;           // while文を抜けるフラグ
+                                // 赤文字にする文字列の配列の要素の数だけループ
                                 for ($k=0; $k < count($elementRed1); $k++) {
-                                    $compare = $elementRed1[$k]; 
+                                    // 比較する要素
+                                    $compare = $elementRed1[$k];
+                                    // 比較する要素が""じゃなかったら 
                                     if ($compare != "") {
+                                        // 比較する要素を総当たり
                                         for ($l=0; $l < count($elementRed1); $l++) {
-                                            $explode = [];
-                                            $split = [];
+                                            $split = [];    // 比較される要素に比較する要素の文字列が一致する文字列があったら
+                                            // 比較する要素と比較される要素がイコールじゃなかったら
                                             if ($compare != $elementRed1[$l]) {
-                                                if(strpos($elementRed1[$l], $compare) !== false){
+                                                // 比較される要素の中に比較する要素の文字列が含まれていたら
+                                                if(strpos($elementRed1[$l], $compare) !== false){ 
+                                                    // 比較する要素で比較される要素を分解する
                                                     $split = preg_split("/$compare/", $elementRed1[$l]);
+                                                    // 要素に一致があったら削除するためにインデックス番号を記憶する
                                                     $deleteIndexMemory[$m] = $l;
+                                                    // 新しく赤文字要素に追加するための分割された要素
                                                     $newElementRed1 = array_merge($newElementRed1, $split);
                                                     $endFlug = true;
                                                     $m++;
@@ -539,29 +506,91 @@
                                 $elementRed1 = array_values($elementRed1);
                             }
 
+                            //  同じ要素は削除する
+                             for ($k=0; $k < count($elementRed1); $k++) { 
+                                 $diff = $elementRed1[$k];
+                                 $elementRed1 = array_diff($elementRed1, array($diff));
+                                 $elementRed1 = array_values($elementRed1);
+                                 array_splice($elementRed1, $k, 0, $diff);
+                             }
+
                             // 赤文字にする
-                            for ($k=0; $k < count($elementRed1); $k++) { 
-                                if ($elementRed1[$k] != "") {
-                                    $contents[$i] = preg_replace("#$elementRed1[$k]+#um", "<span style=color:red>$elementRed1[$k]</span>", $contents[$i]);
+                             for ($k=0; $k < count($elementRed1); $k++) { 
+                                 if ($elementRed1[$k] != "") {
+                                     $pattern = "#$elementRed1[$k]+#um";
+                                     $replacement = "<span style=color:red>$elementRed1[$k]</span>";
+                                     $contents[$i] = preg_replace($pattern, $replacement, $contents[$i]);
+                                 }
+                             }
+
+                            // 一文字もしくは二文字だけの赤文字は黒に戻す
+                            $styleStr1_2 = [];
+                            $bMacth = "";
+                            $str1_2 = "";
+                            $pattern = ["/<span style=color:red>/", "/<\/span>/"];
+                            $replacement = ["", ""];
+                            // 一文字もしくは二文字の赤文字を探す
+                            $bMacth = mb_ereg("(?<!</span>)<span style=color:red>.{1,2}</span>(?!<span style=color:red>)", $contents[$i], $styleStr1_2);
+                            // 一文字もしくは二文字の赤文字があったら
+                            if ($bMacth == true) {
+                                for ($k=0; $k < count($styleStr1_2); $k++) { 
+                                    // 一文字もしくは二文字のタグを外す
+                                    $str1_2 = preg_replace($pattern, $replacement, $styleStr1_2[$k]);
+                                    $contents[$i] = preg_replace("/(?<!<\/span>)<span style=color:red>$str1_2<\/span>(?!<span style=color:red>)/", $str1_2, $contents[$i]);
                                 }
                             }
-                            // for ($k=0; $k < count($elementRed1); $k++) { 
-                            //     if ($elementRed1[$k] != "") {
-                            //         if (mb_strlen($elementRed1[$k]) < 3) {
-                            //             $pattern = "#$elementRed1[$k]<span style=color:red>+#um";
-                            //             $replacement = "<span style=color:red>$elementRed1[$k]";
-                            //             $contents[$i] = preg_replace($pattern, $replacement, $contents[$i]);
-                            //             $pattern = "#</span>$elementRed1[$k]+#um";
-                            //             $replacement = "$elementRed1[$k]</span>";
-                            //             $contents[$i] = preg_replace($pattern, $replacement, $contents[$i]);
-                            //         } else {
-                            //             $pattern = "#$elementRed1[$k]+#um";
-                            //             $replacement = "<span style=color:red>$elementRed1[$k]</span>";
-                            //             $contents[$i] = preg_replace($pattern, $replacement, $contents[$i]);
-                            //         }
-                            //     }
-                            // }
-
+                            
+                            // 一致した要素を赤文字で表示するための処理
+                            // $a：要素数のカウントアップ
+                            $a = 0;
+                            // ひとつ前の要素のインデックス番号メモリ
+                            $b = 0;
+                            // インクリメント
+                            $c = 0;
+                            $continuous = [];       // 連続要素を記憶する変数
+                            $break = false;         // すべての要素をループしたかどうかのフラグ
+                            $continuousStr = "";    // 記憶しておいた連続要素を一つの文字列に連結する変数 
+                            $elementRed2 = [];      // 赤文字にすべき要素を格納する配列
+                            // すべての要素を回るまでループ
+                            while (true) {
+                                $element = $intersect2[$c];
+                                // ループ回数番目のインデックスに要素があったら
+                                if (!empty($element) or $break) {
+                                    $a++;   // 要素数があったからカウントアップ
+                                    if (($c - $b == 1) and !$break) { // もし連番の要素だったら
+                                        // ひとつ前の要素の先頭文字だけ取得
+                                        $continuous[count($continuous)] = mb_substr($intersect2[$b], 0, 1);
+                                    } elseif (($c - $b == 2) and !$break) { // もし一個飛ばしの要素だったら
+                                        // ひとつ前の要素の先頭2文字を取得
+                                        $continuous[count($continuous)] = mb_substr($intersect2[$b], 0, 2);
+                                    } elseif (($c - $b == 3) and !$break) { // もし二個飛ばしの要素だったら
+                                        // ひとつ前の要素の先頭3文字を取得
+                                        $continuous[count($continuous)] = mb_substr($intersect2[$b], 0, 3);
+                                    } elseif ($c != 0) {    // 赤文字の連続文字列じゃなくて最初の要素じゃなかったら
+                                            // 連続文字列の配列の要素をひとつの文字列にする
+                                            for ($k=0; $k < count($continuous); $k++) { 
+                                                $continuousStr = $continuousStr . $continuous[$k];
+                                            }
+                                            // 連続文字列の最後の要素は全文字結合
+                                            $elementRed2[count($elementRed2)] = $continuousStr . $intersect2[$b];
+                                            // 変数初期化
+                                            $continuous = [];
+                                            $continuousStr = "";
+                                    }
+                                    // すべての要素をループしたかどうかのフラグが立っていたら
+                                    if ($break) {
+                                        break;
+                                    }
+                                    // すべての要素をループしたらフラグを立てる
+                                    if ($a >= count($intersect2)) {
+                                        $break = true;
+                                    }
+                                    // ループ回数番目のインデックスに要素があったことを記憶する
+                                    $b = $c;
+                                }
+                                // ループ回数インクリメント
+                                $c++;
+                            }
 
                             ///////////////////////////////////////////////////////////////////////
                             $endFlug = true;
@@ -571,16 +600,24 @@
                                 $deleteIndexMemory = [];    // preg_splitで引っかかった要素のインデックス番号記憶変数→あとで消すために記憶しておく
                                 $m = 0;                     // ループ回数カウンター
                                 $endFlug = false;           // while文を抜けるフラグ
+                                // 赤文字にする文字列の配列の要素の数だけループ
                                 for ($k=0; $k < count($elementRed2); $k++) {
-                                    $compare = $elementRed2[$k]; 
+                                    // 比較する要素
+                                    $compare = $elementRed2[$k];
+                                    // 比較する要素が""じゃなかったら 
                                     if ($compare != "") {
+                                        // 比較する要素を総当たり
                                         for ($l=0; $l < count($elementRed2); $l++) {
-                                            $explode = [];
-                                            $split = [];
+                                            $split = [];    // 比較される要素に比較する要素の文字列が一致する文字列があったら
+                                            // 比較する要素と比較される要素がイコールじゃなかったら
                                             if ($compare != $elementRed2[$l]) {
-                                                if(strpos($elementRed2[$l], $compare) !== false){
+                                                // 比較される要素の中に比較する要素の文字列が含まれていたら
+                                                if(strpos($elementRed2[$l], $compare) !== false){ 
+                                                    // 比較する要素で比較される要素を分解する
                                                     $split = preg_split("/$compare/", $elementRed2[$l]);
+                                                    // 要素に一致があったら削除するためにインデックス番号を記憶する
                                                     $deleteIndexMemory[$m] = $l;
+                                                    // 新しく赤文字要素に追加するための分割された要素
                                                     $newElementRed2 = array_merge($newElementRed2, $split);
                                                     $endFlug = true;
                                                     $m++;
@@ -617,9 +654,6 @@
                                 }
                             }
 
-                            // 次の正規表現では直前にbarがないfoo(barは含まない)に一致します．
-                            // (?<!bar)foo
-
                             // 一文字もしくは二文字だけの赤文字は黒に戻す
                             $styleStr1_2 = [];
                             $bMacth = "";
@@ -629,43 +663,13 @@
                             // 一文字もしくは二文字の赤文字を探す
                             $bMacth = mb_ereg("(?<!</span>)<span style=color:red>.{1,2}</span>(?!<span style=color:red>)", $contents[$j], $styleStr1_2);
                             // 一文字もしくは二文字の赤文字があったら
-                            if ($bMacth = true) {
+                            if ($bMacth == true) {
                                 for ($k=0; $k < count($styleStr1_2); $k++) { 
                                     // 一文字もしくは二文字のタグを外す
                                     $str1_2 = preg_replace($pattern, $replacement, $styleStr1_2[$k]);
                                     $contents[$j] = preg_replace("/(?<!<\/span>)<span style=color:red>$str1_2<\/span>(?!<span style=color:red>)/", $str1_2, $contents[$j]);
                                 }
                             }
-
-
-                            // $afdh = mb_ereg("^(?!.*</span>)<span style=color:red>こ</span>", $contents[$j], $str1_2);
-                            // $afdh = mb_ereg("<span style=color:red>こ</span>", $contents[$j], $str1_2);
-                            // preg_match("/(<span style=color:red>こ</span>)/", $contents[$j], $str1_2);
-                            // preg_match("/(</span>.{1|2})|(.{1|2}<span style=color:red>)/", $contents[$j], $str1_2);
-
-
-
-                            // for ($k=0; $k < count($elementRed2); $k++) { 
-                            //     if ($elementRed2[$k] != "") {
-                            //         $contents[$j] = preg_replace("#$elementRed2[$k]+#um", "<span style=color:red>$elementRed2[$k]</span>", $contents[$j]);
-                            //     }
-                            // }
-                            // for ($k=0; $k < count($elementRed2); $k++) { 
-                            //     if ($elementRed2[$k] != "") {
-                            //         if (mb_strlen($elementRed2[$k]) < 3) {
-                            //             $pattern = "#$elementRed2[$k]<span style=color:red>+#um";
-                            //             $replacement = "<span style=color:red>$elementRed2[$k]";
-                            //             $contents[$j] = preg_replace($pattern, $replacement, $contents[$j]);
-                            //             $pattern = "#</span>$elementRed2[$k]+#um";
-                            //             $replacement = "$elementRed2[$k]</span>";
-                            //             $contents[$j] = preg_replace($pattern, $replacement, $contents[$j]);
-                            //         } else {
-                            //             $pattern = "#$elementRed2[$k]+#um";
-                            //             $replacement = "<span style=color:red>$elementRed2[$k]</span>";
-                            //             $contents[$j] = preg_replace($pattern, $replacement, $contents[$j]);   
-                            //         }
-                            //     }
-                            // }
 
                             // 改ページ文字の削除
                             $contents[$i] = preg_replace("/\f/", "", $contents[$i]);
