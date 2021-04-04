@@ -682,8 +682,17 @@
                                 echo "<p>上段ファイル" . ($i + 1) . "と" . "下段ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
                             }
             ?>
-                            <div class="outputArea" id="outputArea1"><?php echo $contents[$i]; ?></div>
-                            <div class="outputArea" id="outputArea2"><?php echo $contents[$j]; ?></div>
+                            <p>
+                                <a class="" data-toggle="collapse" href="#collapseExample<?php echo $i * $contents_cnt + $j ?>" role="button" aria-expanded="false" aria-controls="collapseExample<?php echo $i * $contents_cnt + $j ?>">
+                                    展開
+                                </a>
+                            </p>
+                            <div class="collapse" id="collapseExample<?php echo $i * $contents_cnt + $j ?>">
+                                <div class="card card-body">
+                                    <div class="outputArea" id="outputArea1"><?php echo $contents[$i]; ?></div>
+                                    <div class="outputArea" id="outputArea2"><?php echo $contents[$j]; ?></div>
+                                </div>
+                            </div>
             <?php
                             $contents[$i] = preg_replace("#<span style=color:red>|</span>#", "", $contents[$i]);
                             $contents[$j] = preg_replace("#<span style=color:red>|</span>#", "", $contents[$j]);
