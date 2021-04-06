@@ -1,0 +1,90 @@
+PCRELIMITS(3)              Library Functions Manual              PCRELIMITS(3)
+
+
+
+NAME
+       PCRE - Perl-compatible regular expressions
+
+SIZE AND OTHER LIMITATIONS
+
+       There  are some size limitations in PCRE but it is hoped that they will never in practice be relevant.
+
+       The maximum length of a compiled  pattern  is  approximately  64K  data units  (bytes  for  the  8-bit library, 16-bit units for the 16-bit library, and 32-bit units for the 32-bit library)  if  PCRE  is  compiled with  the default internal linkage size, which is 2 bytes for the 8-bit and 16-bit libraries, and 4 bytes for the 32-bit library. If  you  want to process regular expressions that are truly enormous, you can compile PCRE with an internal linkage size of 3 or 4 (when building the  16-bit or  32-bit  library,  3 is rounded up to 4). See the README file in the　source distribution and the pcrebuild  documentation  for  details.  In　these  cases  the limit is substantially larger.  However, the speed of　execution is slower.
+
+       All values in repeating quantifiers must be less than 65536.
+
+       There is no limit to the number of parenthesized subpatterns, but there can  be  no more than 65535 capturing subpatterns. There is, however, a limit to the depth of  nesting  of  parenthesized  subpatterns  of  all kinds.  This  is  imposed  in order to limit the amount of system stack used at compile time. The limit can be specified when  PCRE  is  built;
+       the default is 250.
+
+      There is a limit to the number of forward references to subsequent subpatterns of around 200,000. Repeated forward references with fixed  upper limits, for example, (?2){0,100} when subpattern number 2 is to the right, are included in the count. There is no limit to  the  number  of backward references.
+
+       The maximum length of name for a named subpattern is 32 characters, and the maximum number of named subpatterns is 10000.
+
+       The maximum length of a  name  in  a  (*MARK),  (*PRUNE),  (*SKIP),  or (*THEN)  verb is 255 for the 8-bit library and 65535 for the 16-bit and 32-bit libraries.
+
+       The maximum length of a subject string is the largest  positive  number that  an integer variable can hold. However, when using the traditional matching function, PCRE uses recursion to handle subpatterns and indefinite  repetition.  This means that the available stack space may limit the size of a subject string that can be processed by certain patterns.
+       For a discussion of stack issues, see the pcrestack documentation.
+
+
+AUTHOR
+
+       Philip Hazel
+       University Computing Service
+       Cambridge CB2 3QH, England.
+
+
+REVISION
+
+       Last updated: 05 November 2013
+       Copyright (c) 1997-2013 University of Cambridge.
+
+
+エラー内容
+Compilation failed: regular expression is too large at offset 55387
+
+
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+PCRELIMITS（3）ライブラリ関数マニュアルPCRELIMITS（3）
+
+
+
+名前
+       PCRE-Perl互換の正規表現
+
+サイズおよびその他の制限
+
+       PCREにはいくつかのサイズ制限がありますが、実際には関連性がないことが望まれます。
+
+       PCREがでコンパイルされている場合、コンパイルされたパターンの最大長は約64Kデータユニット（8ビットライブラリの場合はバイト、16ビットライブラリの場合は16ビットユニット、32ビットライブラリの場合は32ビットユニット）です。デフォルトの内部リンケージサイズ。8ビットおよび16ビットライブラリの場合は2バイト、32ビットライブラリの場合は4バイトです。本当に巨大な正規表現を処理したい場合は、内部リンケージサイズが3または4のPCREをコンパイルできます（16ビットまたは32ビットライブラリを構築する場合、3は4に切り上げられます）。詳細については、ソースディストリビューションのREADMEファイルおよびpcrebuildのドキュメントを参照してください。これらの場合、制限は大幅に大きくなります。ただし、実行速度は遅くなります。
+
+       繰り返し数量詞のすべての値は、65536未満である必要があります。
+
+       括弧で囲まれたサブパターンの数に制限はありませんが、キャプチャするサブパターンは65535を超えることはできません。ただし、すべての種類の括弧で囲まれたサブパターンのネストの深さには制限があります。これは、コンパイル時に使用されるシステムスタックの量を制限するために課せられます。制限は、PCREの構築時に指定できます。
+       デフォルトは250です。
+
+      後続のサブパターンへの前方参照の数には、約200,000の制限があります。サブパターン番号2が右側にある場合など、上限が固定された繰り返しの前方参照は、カウントに含まれます。後方参照の数に制限はありません。
+
+       名前付きサブパターンの名前の最大長は32文字で、名前付きサブパターンの最大数は10000です。
+
+       （* MARK）、（* PRUNE）、（* SKIP）、または（* THEN）動詞の名前の最大長は、8ビット・ライブラリーの場合は255、16ビットおよび32ビット・ライブラリーの場合は65535です。
+
+       サブジェクト文字列の最大長は、整数変数が保持できる最大の正の数です。ただし、従来のマッチング機能を使用する場合、PCREは再帰を使用してサブパターンと無期限の繰り返しを処理します。これは、使用可能なスタックスペースが、特定のパターンで処理できるサブジェクト文字列のサイズを制限する可能性があることを意味します。
+       スタックの問題については、pcrestackのドキュメントを参照してください。
+
+
+著者
+
+       フィリップ・ヘイゼル
+       大学コンピューティングサービス
+       ケンブリッジCB23QH、イギリス。
+
+
+リビジョン
+
+       最終更新日：2013年11月5日
+       Copyright（c）1997-2013ケンブリッジ大学。
+
+エラー内容
+コンパイルに失敗しました：オフセット55387で正規表現が大きすぎます

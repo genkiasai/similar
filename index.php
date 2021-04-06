@@ -139,10 +139,13 @@
                 $txt_path = __DIR__ . "\\pdftotext_escape\\pdf\\" . $txt_name;
                 // txtファイルのテキストを取得。文字化け
                 $file_get_contents = file_get_contents($txt_path);
+                $aaa = mb_strlen($file_get_contents);
                 // エンコーディング
                 $str = mb_convert_encoding($file_get_contents,"utf-8","sjis"); // シフトJISからUTF-8に変換
+                $aaa = mb_strlen($str);
                 // テキストの空白文字、改行、タブ、
                 $str = preg_replace("#[ \n\t\r　]+#um", "", $str);
+                $aaa = mb_strlen($str);
                 $contents[$i] = $str;
             }
         }
@@ -384,11 +387,7 @@
                     <p class="error col-12 col-sm-12 col-md-12 p-0">読み込むフォルダを指定してください</p>
                 <?php endif; ?>
                 <input type="submit" class="col-12 col-sm-12 col-md-12" id="read_dir" name="read_dir" value="読み込み">
-                <?php for ($i = 0; $i < count($contents); $i++): ?>
-                    <!-- @TODO ファイル名 -->
-                    <p>ファイル<?php echo $i + 1; ?>：<?php echo $pdf_file_name[$i]; ?></p>
-                    <textarea name="read_text" id="read_text<?php echo $i; ?>" cols="30" rows="10"><?php echo $contents[$i]; ?></textarea>
-                <?php endfor; ?>
+
             </div>
 
             <?php
@@ -487,7 +486,9 @@
                                                     // 要素に一致があったら削除するためにインデックス番号を記憶する
                                                     $deleteIndexMemory[$m] = $l;
                                                     // 新しく赤文字要素に追加するための分割された要素
-                                                    $newElementRed1 = array_merge($newElementRed1, $split);
+                                                    if ($split !== false) {
+                                                        $newElementRed1 = array_merge($newElementRed1, $split);
+                                                    }
                                                     $endFlug = true;
                                                     $m++;
                                                 }
@@ -517,8 +518,11 @@
                             // 赤文字にする
                              for ($k=0; $k < count($elementRed1); $k++) { 
                                  if ($elementRed1[$k] != "") {
-                                     $pattern = "#$elementRed1[$k]+#um";
+                                    //  $pattern = "#$elementRed1[$k]+#um";
+                                     $pattern = "#$elementRed1[$k]#um";
+                                     $aaa = mb_strlen($elementRed1[$k]);
                                      $replacement = "<span style=color:red>$elementRed1[$k]</span>";
+                                    //  $contents[$i] = preg_replace($pattern, $replacement, $contents[$i]);
                                      $contents[$i] = preg_replace($pattern, $replacement, $contents[$i]);
                                  }
                              }
@@ -618,7 +622,9 @@
                                                     // 要素に一致があったら削除するためにインデックス番号を記憶する
                                                     $deleteIndexMemory[$m] = $l;
                                                     // 新しく赤文字要素に追加するための分割された要素
-                                                    $newElementRed2 = array_merge($newElementRed2, $split);
+                                                    if ($split !== false) {
+                                                        $newElementRed2 = array_merge($newElementRed2, $split);
+                                                    }
                                                     $endFlug = true;
                                                     $m++;
                                                 }
