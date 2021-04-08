@@ -395,7 +395,7 @@
                 $contents_cnt = count($contents);
                 // 読み込んだファイルの数が2以上だったら
                 if ($contents_cnt >=  2) :
-                    $splitLen = 1000;   // 文字列を分割する文字数
+                    $splitLen = 500;   // 文字列を分割する文字数
                     // 読みこんだファイルの数だけループ
                     for ($i = 0; $i < $contents_cnt - 1; $i++) :
                         // 比較対象
@@ -455,7 +455,43 @@
                                 get_ngram($afterStr2[$o], $_POST["ngram"], $substr2[$o]);
                             }
 
+                            // 赤文字にする処理
+                            for ($o=0; $o < count($afterStr1); $o++) { 
+                                for ($p=0; $p < count($afterStr2); $p++) { 
+                                    // 上段に表示するもの
+                                    $intersect1 = array_intersect($substr1[$o], $substr2[$p]);
+                                    $elementRed1 = [];
+                                    // 一致した要素を分割したりして整理する
+                                    matchStrRedChange($intersect1, $elementRed1);
+                                    // 赤文字に変える要素を使ってテキストを赤文字にする 
+                                    // ChangeRedStr($elementRed1, $contents[$i]);
+                                    ChangeRedStr($elementRed1, $afterStr1[$o]);
 
+                                    // 下段に表示するもの
+                                    $intersect2 = array_intersect($substr2[$p], $substr1[$o]);
+                                    $elementRed2 = [];
+                                    // 一致した要素を分割したりして整理する
+                                    matchStrRedChange($intersect2, $elementRed2);
+                                    // 赤文字に変える要素を使ってテキストを赤文字にする 
+                                    // ChangeRedStr($elementRed2, $contents[$j]);
+                                    ChangeRedStr($elementRed2, $afterStr2[$p]);
+                                }
+                            }
+
+                            // // 赤文字にする処理（下段）
+                            // for ($o=0; $o < count($substr1); $o++) { 
+                            //     for ($p=0; $p < count($substr2); $p++) { 
+                            //         // 上段に表示するもの
+                            //         $intersect1 = array_intersect($substr1[$o], $substr2[$p]);
+                            //         $elementRed1 = [];
+                            //         // 一致した要素を分割したりして整理する
+                            //         matchStrRedChange($intersect1, $elementRed1);
+                            //         // 赤文字に変える要素を使ってテキストを赤文字にする 
+                            //         ChangeRedStr($elementRed1, $contents[$i]);
+                            //     }
+                            // }
+
+/////////////////////////////////////
                                 get_ngram($contents2, $_POST["ngram"], $substr1);
                                 // 取得したN-gramで同じ要素を取得
                                 $intersect1 = array_intersect($substr1, $substr2);
@@ -513,6 +549,7 @@
                                     // ループ回数インクリメント
                                     $c++;
                                 }
+
                                 // 各要素の文字列にかぶりがあったら分解する処理
                                 $endFlug = true;
                                 while ($endFlug === true) {
