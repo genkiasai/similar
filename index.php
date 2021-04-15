@@ -1,6 +1,20 @@
 <?php
     session_start();
 
+    // 実行時間（4時間）
+    ini_set("max_execution_time", 14400);
+    // スクリプトが POST、GET などの入力をパースする最大の時間（0：無制限）
+    ini_set("max_input_time", 0);
+    // メモリの使用量（-1：無制限）
+    ini_set("memory_limit", -1);
+    // POSTデータに許可される最大サイズ
+    ini_set("post_max_size", "4G");
+    // アップロードされるファイルの最大サイズ
+    ini_set("upload_max_filesize", "4G");
+    // 同時にアップロードできるファイルの最大数
+    ini_set("max_file_uploads", 1000);
+
+
     $startTime = microtime(true);
 
     require ("./common.php");
@@ -76,7 +90,7 @@
     // フォルダ読み込み //
     /////////////////////
     // 指定されたフォルダの.pdfファイルのパスを[dirname][tmp_name]で抽出
-    var_dump("フォルダ読み込み開始");
+    // var_dump("フォルダ読み込み開始");
     $pdf_cnt = 0;
     $pdf_name[] = "";
     $pdf_tmp_name[] = "";
@@ -85,7 +99,7 @@
         // Zipファイル読み込み //
         ////////////////////////
         // 指定されたフォルダの.zipファイルのパスを[dirname][tmp_name]で抽出
-        var_dump("zipファイル読み込み開始");
+        // var_dump("zipファイル読み込み開始");
         $zip_cnt = 0;
         $zip_name[] = "";
         $zip_tmp_name[] = "";
@@ -98,7 +112,7 @@
         for ($i = 0; $i < count($_FILES["dirname"]["tmp_name"]); $i++) {
             if (substr($_FILES["dirname"]["name"][$i], -4, 4) === ".zip") {
                 $zip_name = preg_replace("#[　 ]#u", "", $_FILES["dirname"]["name"][$i]);
-                var_dump("zipファイル" . $i . "：" . $zip_name);
+                // var_dump("zipファイル" . $i . "：" . $zip_name);
                 $zip_tmp_name = $_FILES["dirname"]["tmp_name"][$i];
                 move_uploaded_file($zip_tmp_name, "./pdftotext_escape/" . $zip_name);
                 if ($zip->open("./pdftotext_escape/" . $zip_name) === true) {
@@ -115,7 +129,7 @@
         $pdf_files = [];
         $pdf_files = glob("./pdftotext_escape/pdf/*.pdf");
         for ($i = 0; $i < count($pdf_files); $i++) {
-            var_dump("展開させてescapeさせたpdfファイル：" . $pdf_files[$i]);
+            // var_dump("展開させてescapeさせたpdfファイル：" . $pdf_files[$i]);
         } 
         for ($i = 0; $i < count($pdf_files); $i++) {
             $pdf_path_name = basename($pdf_files[$i]);
@@ -123,9 +137,9 @@
             $pdf_replace_name = preg_replace("#[ 　]#u", "", $pdf_path_name);
             // $cmd2 = __DIR__ . "\\xpdf-tools-win-4.03\\bin64\\pdftotext -enc Shift-JIS " . __DIR__ . "\\pdftotext_escape/pdf/" . $pdf_replace_name;
             $cmd2 = __DIR__ . "/xpdf-tools-win-4.03/bin64/pdftotext -enc Shift-JIS " . __DIR__ . "/pdftotext_escape/pdf/" . $pdf_replace_name;
-            var_dump("\$cmd2：" . $cmd2);
+            // var_dump("\$cmd2：" . $cmd2);
             exec ($cmd2, $dummy, $result2);
-            var_dump("\$result2：" . $result2);
+            // var_dump("\$result2：" . $result2);
             if ($result2 === 0) {
                 // $txt_name = explode(".", $pdf_path_name)[0] . ".txt";
                 $txt_name = explode(".", $pdf_replace_name)[0] . ".txt";
@@ -372,7 +386,7 @@
                     <p class="error col-12 col-sm-12 col-md-12 p-0">読み込むフォルダを指定してください</p>
                 <?php endif; ?>
                 <input type="submit" class="col-12 col-sm-12 col-md-12" id="read_dir" name="read_dir" value="読み込み">
-                <?php // var_dump($_FILES["dirname"]["name"]); ?>
+                <?php // // var_dump($_FILES["dirname"]["name"]); ?>
             </div>
             
             <?php
