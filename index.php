@@ -400,10 +400,10 @@
                                 $aaa = array_intersect($substr1, $substr2);
                                 similar_check ($substr1, $substr2, $perc);
                                 if ($perc > $_POST["threshold"]) {
-                                    echo "<p style='color: red;'><u>" . $i+1 . ". "  . $pdf_file_name[$i + 1] . "</u>　と　<u>" . $j+1 . ". "  . $pdf_file_name[$j] . "</u>　の類似度：" . $perc . "%" . "</p>";
+                                    echo "<p style='color: red;'><u>" . $i+1 . ". "  . $pdf_file_name[$i] . "</u>　と　<u>" . $j+1 . ". "  . $pdf_file_name[$j] . "</u>　の類似度：" . $perc . "%" . "</p>";
                                     // echo "<p style='color: red;'>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
                                 } else {
-                                    echo "<p><u>" . $i+1 . ". "  . $pdf_file_name[$i + 1] . "</u>　と　<u>" . $j+1 . ". "  . $pdf_file_name[$j] . "</u>　の類似度：" . $perc . "%" . "</p>";
+                                    echo "<p><u>" . $i+1 . ". "  . $pdf_file_name[$i] . "</u>　と　<u>" . $j+1 . ". "  . $pdf_file_name[$j] . "</u>　の類似度：" . $perc . "%" . "</p>";
                                     // echo "<p>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
                                 }
                             }
