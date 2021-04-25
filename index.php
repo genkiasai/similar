@@ -250,6 +250,18 @@
         .error {
             color: red;
         }
+
+        .outputArea {
+            border: 1px solid #000;
+        }
+
+        #outputArea1 {
+            background-color: #fffff4;
+        }
+
+        #outputArea2 {
+            background-color: #f4ffff;
+        }
     </style>
 </head>
 <body>
@@ -386,41 +398,56 @@
                     <p class="error col-12 col-sm-12 col-md-12 p-0">読み込むフォルダを指定してください</p>
                 <?php endif; ?>
                 <input type="submit" class="col-12 col-sm-12 col-md-12" id="read_dir" name="read_dir" value="読み込み">
-                <?php // // var_dump($_FILES["dirname"]["name"]); ?>
             </div>
             
             <?php
-                    // 計算した類似度の表示
-                    $contents_cnt = count($contents);
-                    if ($contents_cnt >=  2) {
-                        for ($i = 0; $i < $contents_cnt - 1; $i++) {
-                            for ($j = $i + 1; $j < $contents_cnt; $j++) {
-                                get_ngram ($contents[$i], $_POST["ngram"], $substr1);
-                                get_ngram ($contents[$j], $_POST["ngram"], $substr2);
-                                $aaa = array_intersect($substr1, $substr2);
-                                similar_check ($substr1, $substr2, $perc);
-                                if ($perc > $_POST["threshold"]) {
-                                    echo "<p style='color: red;'><u>" . $i+1 . ". "  . $pdf_file_name[$i] . "</u>　と　<u>" . $j+1 . ". "  . $pdf_file_name[$j] . "</u>　の類似度：" . $perc . "%" . "</p>";
-                                    // echo "<p style='color: red;'>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
-                                } else {
-                                    echo "<p><u>" . $i+1 . ". "  . $pdf_file_name[$i] . "</u>　と　<u>" . $j+1 . ". "  . $pdf_file_name[$j] . "</u>　の類似度：" . $perc . "%" . "</p>";
-                                    // echo "<p>ファイル" . ($i + 1) . "と" . "ファイル" . ($j + 1) . "の類似度：" . $perc . "%" . "</p>";
-                                }
+                // 計算した類似度の表示
+                $contents_cnt = count($contents);
+                if ($contents_cnt >=  2) :
+                    for ($i = 0; $i < $contents_cnt - 1; $i++) :
+                        for ($j = $i + 1; $j < $contents_cnt; $j++) :
+                            // 改ページ文字の削除
+                            $contents[$i] = preg_replace("/\f/", "", $contents[$i]);
+                            $contents[$j] = preg_replace("/\f/", "", $contents[$j]);
+                            similar_text($contents[$i], $contents[$j], $perc);
+                            get_ngram ($contents[$i], $_POST["ngram"], $substr1);
+                            get_ngram ($contents[$j], $_POST["ngram"], $substr2);
+                            similar_check ($substr1, $substr2, $perc);
+                            // 有効数字
+                            if ($perc < 10) {
+                                $perc = round($perc, 2, PHP_ROUND_HALF_UP);
+                            } elseif ($perc < 100) {
+                                $perc = round ($perc, 1, PHP_ROUND_HALF_UP);
+                            } elseif ($perc === 100) {
+                                // そのまま
                             }
-                        }
-                    }
-                ?>
-                
-                <?php for ($i = 0; $i < count($contents); $i++): ?>
-                    <!-- @TODO ファイル名 -->
-                    <p>ファイル<?php echo $i + 1; ?>：<?php echo $pdf_file_name[$i]; ?></p>
-                    <textarea name="read_text" id="read_text<?php echo $i; ?>" cols="30" rows="10"><?php echo $contents[$i]; ?></textarea>
-                <?php endfor; ?>
+                            if ($perc > $_POST["threshold"]) {
+                                echo "<p style='color: red;'><u>" . $i+1 . ". "  . $pdf_file_name[$i] . "</u>（上段）　と　<u>" . $j+1 . ". "  . $pdf_file_name[$j] . "</u>（下段）　の類似度：" . $perc . "%" . "</p>";
+                            } else {
+                                echo "<p><u>" . $i+1 . ". "  . $pdf_file_name[$i] . "</u>（上段）　と　<u>" . $j+1 . ". "  . $pdf_file_name[$j] . "</u>（下段）　の類似度：" . $perc . "%" . "</p>";
+                            }
+            ?>
+                            <p>
+                                <a class="" data-toggle="collapse" href="#collapseExample<?php echo $i * $contents_cnt + $j ?>" role="button" aria-expanded="false" aria-controls="collapseExample<?php echo $i * $contents_cnt + $j ?>">
+                                    展開
+                                </a>
+                            </p>
+                            <div class="collapse" id="collapseExample<?php echo $i * $contents_cnt + $j ?>">
+                                <div class="card card-body">
+                                    <div class="outputArea" id="outputArea1"><?php echo $contents[$i]; ?></div>
+                                    <div class="outputArea" id="outputArea2"><?php echo $contents[$j]; ?></div>
+                                </div>
+                            </div>
+            <?php
+                        endfor;
+                    endfor;
+                endif;
+            ?>
 
-                <?php
-                    $endTime = microtime(true);
-                    echo floor(($endTime - $startTime)/60) . "分" . ($endTime - $startTime)%60 . "秒";
-                ?>
+            <?php
+                $endTime = microtime(true);
+                echo floor(($endTime - $startTime)/60) . "分" . ($endTime - $startTime)%60 . "秒";
+            ?>
 
         </div>
 
