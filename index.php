@@ -136,7 +136,7 @@
             $pdf_file_name[$i] = $pdf_path_name; 
             $pdf_replace_name = preg_replace("#[ 　]#u", "", $pdf_path_name);
             // $cmd2 = __DIR__ . "\\xpdf-tools-win-4.03\\bin64\\pdftotext -enc Shift-JIS " . __DIR__ . "\\pdftotext_escape/pdf/" . $pdf_replace_name;
-            $cmd2 = __DIR__ . "/xpdf-tools-win-4.03/bin64/pdftotext -enc Shift-JIS " . __DIR__ . "/pdftotext_escape/pdf/" . $pdf_replace_name;
+            $cmd2 = __DIR__ . "/xpdf-tools-win-4.03/bin64/pdftotext -enc Shift-JIS " . __DIR__ . "/pdftotext_escape/pdf/" . $pdf_replace_name . " 2> ./logs/a.log";
             // var_dump("\$cmd2：" . $cmd2);
             exec ($cmd2, $dummy, $result2);
             // var_dump("\$result2：" . $result2);
@@ -144,6 +144,7 @@
                 // $txt_name = explode(".", $pdf_path_name)[0] . ".txt";
                 $txt_name = explode(".", $pdf_replace_name)[0] . ".txt";
                 $txt_path = __DIR__ . "\\pdftotext_escape\\pdf\\" . $txt_name;
+                $txt_path = __DIR__ . "/pdftotext_escape/pdf/" . $txt_name;
                 // 文字化け
                 $file_get_contents = file_get_contents($txt_path);
                 $str = mb_convert_encoding($file_get_contents,"utf-8","sjis"); // シフトJISからUTF-8に変換
@@ -408,6 +409,10 @@
                         for ($j = $i + 1; $j < $contents_cnt; $j++) :
                             // 改ページ文字の削除
                             $contents[$i] = preg_replace("/\f/", "", $contents[$i]);
+
+                            var_dump ($i);
+                            var_dump ($j);
+
                             $contents[$j] = preg_replace("/\f/", "", $contents[$j]);
                             similar_text($contents[$i], $contents[$j], $perc);
                             get_ngram ($contents[$i], $_POST["ngram"], $substr1);
