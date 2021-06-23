@@ -14,7 +14,6 @@
     // 同時にアップロードできるファイルの最大数
     ini_set("max_file_uploads", 1000);
 
-
     $startTime = microtime(true);
 
     require ("./common.php");
@@ -37,135 +36,61 @@
     // ZipArchiveクラスコンストラクタ
     $zip = new ZipArchive;
 
-
-    //////////////
-    // 比較処理1 //
-    //////////////
-    if (!empty($_POST["check"])) {
-        $text1 = $_POST["check1"];
-        $text2 = $_POST["check2"];
-        similar_text($text1, $text2, $perc);
-    }
-
-    //////////////
-    // 比較処理2 //
-    //////////////
-    $judge_len = 9999999;
-    if (isset($_POST["check_sub"])) {
-        $text3 = preg_replace("#[ \n\r\t　]+#um", "", $_POST["check3"]);
-        $text4 = preg_replace("#[ \n\r\t　]+#um", "", $_POST["check4"]);
-        $n3 = get_ngram ($text3, $_POST["ngram_"], $substr3);
-        $n4 = get_ngram ($text4, $_POST["ngram_"], $substr4);
-        similar_check ($substr3, $substr4, $perc_sub);
-        // エラー判定
-        $text3_len = mb_strlen ($text3);
-        $text4_len = mb_strlen ($text4);
-        $judge_len = min($text3_len, $text4_len);
-    }
-
-    /////////////
-    // 変換処理 //
-    /////////////
-    if (!empty($_POST["conversion"])) {
-        $text5 = $_POST["check5"];
-        // スラッシュで囲わないと上手く動かなかった →　囲うのはスラッシュでなくても良くて、囲う文字のことをデリミタという
-        // 角かっこ[]で囲ったものをマッチさせる
-        // +記号は連続文字を一つのまとまりとして扱う
-        // uはUTF-8として扱う
-        // mは改行文字ごとに行頭と行末を判断する。mをつけなければ改行されている文字列があっても先頭文字と末端文字でしか行頭と行末を判断してくれない
-        $text6 = preg_replace("#[ \n\t\r　]+#um", "", $text5);
-
-        $len = mb_strlen($text6);
-        $n = 3;
-        if ($len <=0 || $len < $n) return false;
-        for ($i = 0; $i < $len; $i++) {
-            $substr = mb_substr($text6, $i, $n);
-            if (mb_strlen($substr) >= $n) {
-                $comp_array[$i] = $substr;
-            }
-        }
-    }
-
     /////////////////////
     // フォルダ読み込み //
     /////////////////////
-    // 指定されたフォルダの.pdfファイルのパスを[dirname][tmp_name]で抽出
+    // 指定されたフォルダの.pdfファイルのパスを[filename][tmp_name]で抽出
     // var_dump("フォルダ読み込み開始");
-    $pdf_cnt = 0;
-    $pdf_name[] = "";
-    $pdf_tmp_name[] = "";
-    if (isset($_FILES["dirname"]["tmp_name"])) {
-        ////////////////////////
-        // Zipファイル読み込み //
-        ////////////////////////
-        // 指定されたフォルダの.zipファイルのパスを[dirname][tmp_name]で抽出
-        // var_dump("zipファイル読み込み開始");
-        $zip_cnt = 0;
-        $zip_name[] = "";
-        $zip_tmp_name[] = "";
-        if (!(file_exists(__DIR__ . "/pdftotext_escape"))) {
-            mkdir(__DIR__ . "/pdftotext_escape");
-        }
-        if (!(file_exists(__DIR__ . "/pdftotext_escape/pdf"))) {
-            mkdir(__DIR__ . "/pdftotext_escape/pdf");
-        }
-        for ($i = 0; $i < count($_FILES["dirname"]["tmp_name"]); $i++) {
-            if (substr($_FILES["dirname"]["name"][$i], -4, 4) === ".zip") {
-                $zip_name = preg_replace("#[　 ]#u", "", $_FILES["dirname"]["name"][$i]);
-                // var_dump("zipファイル" . $i . "：" . $zip_name);
-                $zip_tmp_name = $_FILES["dirname"]["tmp_name"][$i];
-                move_uploaded_file($zip_tmp_name, "./pdftotext_escape/" . $zip_name);
-                if ($zip->open("./pdftotext_escape/" . $zip_name) === true) {
-                    $zip->extractTo("./pdftotext_escape/");
-                    $zip->close();
+    $read_file_name = "";       // 読み込まれたファイルのファイル名
+    $read_file_tmp_name = "";   // 読み込まれたファイルのテンポラリ名
+    $pdf_file_name = [];        // 読み込まれたzipファイルに圧縮されているファイルのファイル名の配列
+    $zip = new ZipArchive;      // ZipArchiveクラス
+    if (isset($_FILES["filename"]["tmp_name"])) {
+        $read_file_name = $_FILES["filename"]["name"];
+        $read_file_tmp_name = $_FILES["filename"]["tmp_name"];
+        // 読み込まれたファイルがzipファイルではなかったらアラートを出す
+        if (mb_substr($read_file_name, -4, 4) !== ".zip") {
+            $alert = "<script type='text/javascript'>alert('zipファイルを選択してください');</script>";
+            echo $alert;
+        } elseif ($zip->open($_FILES["filename"]["tmp_name"]) === TRUE) {
+            for ($i=0; $i < $zip->numFiles; $i++) { 
+                // ZipArchive::FL_ENC_RAW → 自動でエンコードされるのを防止するパラメタ
+                $archive_file_name = $zip->getNameIndex($i, ZipArchive::FL_ENC_RAW);
+                $enc_name = mb_convert_encoding($archive_file_name, "utf-8", "sjis");
+                $enc_name_nospace = preg_replace("#[ \n\r\t　]+#um", "", $enc_name);
+                $zip->renameIndex($i, $enc_name_nospace);
+                $pdf_file_name[$i] = $enc_name_nospace;
+            }
+            $zip->extractTo(__DIR__ . '/pdftotext_escape/', $pdf_file_name);
+            $zip->close();
+
+            array_map("unlink", glob("./pdftotext_escape/*.txt"));
+
+            $pdf_files = glob(__DIR__ . "/pdftotext_escape/*.pdf");
+            for ($i=0; $i < count($pdf_files); $i++) { 
+                // txtファイル変換後のファイル名
+                $text_file_name = mb_split("\.", mb_split("/", $pdf_files[$i])[count(mb_split("/", $pdf_files[$i]))-1])[0] . ".txt";
+                $cmd = __DIR__ . "/poppler/bin/pdftotext.exe -enc Shift-JIS " . $pdf_files[$i] . " " . __DIR__ . "/pdftotext_escape/temporary_name.txt";
+                exec($cmd, $dummy, $result);
+                if ($result === 0) {
+                    $test = glob("./pdftotext_escape/*txt");
+                    // 文字化け
+                    $txt_file_path = __DIR__ . "/pdftotext_escape/temporary_name.txt";
+                    $file_get_contents = file_get_contents($txt_file_path);
+                    $str = mb_convert_encoding($file_get_contents,"utf-8","sjis"); // シフトJISからUTF-8に変換
+                    $contents[$i] = $str;
                 }
-                $pdf_files = glob("./pdftotext_escape/*.pdf");
-                for ($j = 0; $j < count($pdf_files); $j++) {
-                    $file_name = preg_replace("#[ 　]#u", "", explode(".", $zip_name)[0]);
-                    rename($pdf_files[$j], "./pdftotext_escape/pdf/" . $file_name . ".pdf");
-                } 
             }
+            array_map("unlink", glob("./pdftotext_escape/*.txt"));
+            array_map("unlink", glob("./pdftotext_escape/*.pdf"));
         }
-        $pdf_files = [];
-        $pdf_files = glob("./pdftotext_escape/pdf/*.pdf");
-        for ($i = 0; $i < count($pdf_files); $i++) {
-            // var_dump("展開させてescapeさせたpdfファイル：" . $pdf_files[$i]);
-        } 
-        for ($i = 0; $i < count($pdf_files); $i++) {
-            $pdf_path_name = basename($pdf_files[$i]);
-            $pdf_file_name[$i] = $pdf_path_name; 
-            $pdf_replace_name = preg_replace("#[ 　]#u", "", $pdf_path_name);
-            // $cmd2 = __DIR__ . "\\xpdf-tools-win-4.03\\bin64\\pdftotext -enc Shift-JIS " . __DIR__ . "\\pdftotext_escape/pdf/" . $pdf_replace_name;
-            $cmd2 = __DIR__ . "/xpdf-tools-win-4.03/bin64/pdftotext -enc Shift-JIS " . __DIR__ . "/pdftotext_escape/pdf/" . $pdf_replace_name . " 2> ./logs/a.log";
-            // var_dump("\$cmd2：" . $cmd2);
-            exec ($cmd2, $dummy, $result2);
-            // var_dump("\$result2：" . $result2);
-            if ($result2 === 0) {
-                // $txt_name = explode(".", $pdf_path_name)[0] . ".txt";
-                $txt_name = explode(".", $pdf_replace_name)[0] . ".txt";
-                $txt_path = __DIR__ . "\\pdftotext_escape\\pdf\\" . $txt_name;
-                $txt_path = __DIR__ . "/pdftotext_escape/pdf/" . $txt_name;
-                // 文字化け
-                $file_get_contents = file_get_contents($txt_path);
-                $str = mb_convert_encoding($file_get_contents,"utf-8","sjis"); // シフトJISからUTF-8に変換
-                $contents[$i] = $str;
-            }
-        }
-        array_map("unlink", glob("./pdftotext_escape/pdf/*.pdf"));
-        array_map("unlink", glob("./pdftotext_escape/pdf/*.txt"));
-        array_map("unlink", glob("./pdftotext_escape/*.zip"));
-        array_map("unlink", glob("./pdftotext_escape/*.txt"));
     }
-    
-
-
-
 ?>
 
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
+    <!-- <meta charset="UTF-8"> -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>similar_check</title>
     <!-- Bootstrap4 -->
@@ -209,7 +134,7 @@
             width: 100%;
         }
 
-        .dirname {
+        .filename {
             display: none;
         }
 
@@ -263,10 +188,19 @@
         #outputArea2 {
             background-color: #f4ffff;
         }
+
+        .no-disp {
+            display: none;
+        }
+
+        .wrapper {
+            width: 90%;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
-<div class="container">
+<div class="wrapper">
     <h1>剽窃チェックツール</h1>
     <form action="" method="POST" enctype="multipart/form-data">
     <input type="hidden" name="check1" value=<?php $_POST["check1"]; ?>>
@@ -274,7 +208,7 @@
     <input type="hidden" name="check3" value=<?php $_POST["check3"]; ?>>
     <input type="hidden" name="check4" value=<?php $_POST["check4"]; ?>>
         <!-- ------------------------------------------- -->
-        <div class="content_box">
+        <div class="content_box no-disp">
         <p>【similar_text】</p>
         <p class="discription">
             PHPで用意されている関数「similar_text ($str1(string), $str2(string), $perc(double))」を使った類似度チェック方法です。<br>
@@ -322,7 +256,7 @@
         </div>
 
         <!-- ------------------------------------------- -->
-        <div class="content_box">
+        <div class="content_box no-disp">
         <p>【N-gram】</p>
         <p class="discription">
             「N-gram」を用いた類似度チェック方法です。「N-gram」とは、文字列の隣り合うN個の文字の並びのことをいいます。<br>
@@ -386,19 +320,21 @@
                 現状、N-gramでの類似度チェックとなっているため、N-gramの数値の指定もお願いします。
             </p>
             <div class="row input_text">
-                <input type="file" class="dirname" id="dirname" name="dirname[]" webkitdirectory directory value="フォルダ読み込み"><br>
-                <label class="button" for="dirname">フォルダ選択</label><br>
+                <!-- フォルダ読み込み -->
+                <input type="file" class="filename" id="filename" name="filename" value="フォルダ読み込み"><br>
+                <!-- ファイル読み込み -->
+                <label class="button" for="filename">フォルダ選択</label><br>
                 <div class="w-100"></div>
-                <p class="mr-5">N-gram:<input type="number" class="ngram" id="ngram" name="ngram" min="2" max="10" step="1" value="<?php echo $_POST["ngram"]; ?>"></p>
+                <p class="mr-5">N-gram：<input type="number" class="ngram" id="ngram" name="ngram" min="2" max="10" step="1" value="<?php echo $_POST["ngram"]; ?>"></p>
                 <p class="p-0">類似度閾値：<input type="number" class="threshold" id="threshold" name="threshold" min="1" max="100" step="1" value="<?php echo $_POST["threshold"]; ?>"></p>
                 <div class="w-100"></div>
                 <p>※文字列に含まれる「改行」「空白」「タブ」は削除して計算しています。</p>
                 <?php if ($text_min_len < $_POST["ngram"] || $_POST["ngram"] < 2) : ?>
                     <p class="error col-12 col-sm-12 col-md-12 p-0">N-gramは2以上かつ文字列の文字数以下で指定してください</p>
-                <?php elseif (empty($_FILES["dirname"]["name"][0]) && isset($_POST["read_dir"])) : ?>
+                <?php elseif (empty($_FILES["filename"]["name"]) && isset($_POST["read_file"])) : ?>
                     <p class="error col-12 col-sm-12 col-md-12 p-0">読み込むフォルダを指定してください</p>
                 <?php endif; ?>
-                <input type="submit" class="col-12 col-sm-12 col-md-12" id="read_dir" name="read_dir" value="読み込み">
+                <input type="submit" class="col-12 col-sm-12 col-md-12" id="read_file" name="read_file" value="読み込み">
             </div>
             
             <?php
