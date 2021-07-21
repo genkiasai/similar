@@ -1,0 +1,6 @@
+dockerのインストール
+dockerの実行
+dockerの確認（docker --version, docker run hello-world）
+googleドライブからフォルダを持ってきて展開
+フォルダに移動
+docker build -t similar ./
